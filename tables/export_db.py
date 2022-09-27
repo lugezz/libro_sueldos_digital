@@ -16,8 +16,8 @@ def exportaDB(request):
         p = OrdenRegistro(
             tiporegistro=tr,
             name=raw['Campo'],
-            fromm=raw['Long'],
-            long=raw['Desde'],
+            fromm=raw['Desde'],
+            long=raw['Long'],
             type=raw['Tipo2'],
             description=raw['Observación'],
         )

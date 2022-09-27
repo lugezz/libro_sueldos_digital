@@ -29,7 +29,7 @@ class OrdenRegistro(models.Model):
 
 
     def __str__(self):
-        return f'{str(self.tiporegistro.order)} - FROM: {self.fromm} - {self.name}'
+        return f'{str(self.tiporegistro.order)} - From: {self.fromm} - {self.name}'
 
     class Meta:
         ordering = ['tiporegistro__order', 'fromm']
