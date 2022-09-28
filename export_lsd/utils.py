@@ -21,10 +21,38 @@ def amount_txt_to_integer(amount_txt: str, mulitp=100) -> int:
     return resp
 
 
-def exclude_eventuales(txt_info: str) -> list:
+def exclude_eventuales(txt_info: str) -> str:
     resp = []
     for legajo in txt_info:
         mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
         if mod_cont != 102:
             resp.append(legajo)
+
+    return resp
+
+
+def just_eventuales(txt_info: str) -> str:
+    resp = []
+    for legajo in txt_info:
+        mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
+        if mod_cont == 102:
+            resp.append(legajo)
+
+    return resp
+
+
+def sync_format(info: str, expected_len: int, type_info: str) -> str:
+    resp = info
+
+    if len(info) != expected_len:
+        if len(info) > expected_len:
+            resp = round(float(info.replace(',', '.').strip()))
+            resp = str(resp).zfill(expected_len)
+        else:
+            if type_info == 'NU':
+                resp = str(int(float(info.replace(',', '.').strip()) * 100))
+                resp = resp.zfill(expected_len)
+            else:
+                resp = info.ljust(expected_len)
+
     return resp

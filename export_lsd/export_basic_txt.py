@@ -5,7 +5,8 @@ from django.shortcuts import render
 from lsd.my_config import lsd_cfg
 from export_lsd.models import OrdenRegistro
 from export_lsd.utils import (amount_txt_to_integer, exclude_eventuales,
-                              get_value_from_txt, NOT_OS_INSSJP, NOT_SIJP)
+                              get_value_from_txt, NOT_OS_INSSJP, NOT_SIJP,
+                              just_eventuales, sync_format)
 
 
 def process_reg1(cuit: str, pay_day: date, employees: int):
@@ -46,11 +47,9 @@ def process_reg2(txt_info: str, payday: date):
     Fecha de rúbrica	8	107	114
     Forma de pago	1	115	115
     """
-    # Excluir eventuales
-    clean_txt_info = exclude_eventuales(txt_info)
     resp = []
     leg = 1
-    for legajo in clean_txt_info:
+    for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
         # TODO: Get user
         area = lsd_cfg()['default'].get('area', '').ljust(50)
@@ -64,9 +63,9 @@ def process_reg2(txt_info: str, payday: date):
 
         resp.append(item)
 
-    resp = '\n'.join(resp)
+    resp_final = '\n'.join(resp)
 
-    return resp
+    return resp_final
 
 
 def process_reg3(txt_info):
@@ -80,11 +79,9 @@ def process_reg3(txt_info):
     Indicador Débito / Crédito	1	45	45
     Período de ajuste retroactivo	6	46	51
     """
-    # Excluir eventuales
-    clean_txt_info = exclude_eventuales(txt_info)
     resp = []
     leg = 1
-    for legajo in clean_txt_info:
+    for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
         mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
         cond = int(get_value_from_txt(legajo, 'Codigo de Condición'))
@@ -146,29 +143,66 @@ def process_reg3(txt_info):
 
         leg += 1
 
-    resp = '\n'.join(resp)
+    resp_final = '\n'.join(resp)
 
-    return resp
+    return resp_final
 
 
 def process_reg4(txt_info):
-    resp = ''
+    resp = []
     reg4_qs = OrdenRegistro.objects.filter(tiporegistro__order=4)
 
-    for reg in reg4_qs:
-        if reg.formatof931:
-            # Si está lo vinculo puliendo formato
-            pass
+    for legajo in txt_info:
+        linea = ''
+        for reg in reg4_qs:
+            if reg.formatof931:
+                # Si está lo vinculo puliendo formato
+                print(reg.formatof931.name)
+                linea += sync_format(get_value_from_txt(legajo, reg.formatof931.name), reg.long, reg.type)
 
-        else:
-            # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
-            pass
+            else:
+                # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
+                if reg.name == 'Identificación del tipo de registro':
+                    linea += '04'
+                elif reg.name == 'Base imponible 10':
+                    rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+                    rem10 -= amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
+                    linea += str(rem10).zfill(15)
+                else:
+                    linea += "0" * reg.long
 
-    return resp
+        resp.append(linea)
+
+    resp_final = '\n'.join(resp)
+
+    return resp_final
 
 
 def process_reg5(txt_info):
-    pass
+    """
+    Identificacion del tipo de registro	2	1	2
+    CUIL del trabajador	11	3	13
+    Categoría profesional	6	14	19
+    Puesto desempeñado	4	20	23
+    Fecha de ingreso	8	24	31
+    Fecha de egreso	8	32	39
+    Remuneración	15	40	54
+    CUIT del empleador	11	55	65
+    """
+    resp = []
+    for legajo in txt_info:
+        cuil = get_value_from_txt(legajo, 'CUIL')
+        # TODO: Get información de simplicación registral, ver forma
+        cuit_emp = lsd_cfg()['default'].get('cuit_empleador_eventuales', '')
+        rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
+
+        item = f'05{cuil}     1   12022010199991231{str(rem9).zfill(15)}{cuit_emp}'
+
+        resp.append(item)
+
+    resp_final = '\n'.join(resp)
+
+    return resp_final
 
 
 # def export_txt(txt_file, cuit: str, pay_day: date):
@@ -182,10 +216,14 @@ def export_txt(request):
         txt_info = f.readlines()
 
     txt_clean_info = [x for x in txt_info if len(x) > 2]
+    txt_no_eventuales = exclude_eventuales(txt_clean_info)
+    txt_just_eventuales = just_eventuales(txt_clean_info)
+
     reg1 = process_reg1(cuit, pay_day, len(txt_clean_info))
-    reg2 = process_reg2(txt_clean_info, pay_day)
-    reg3 = process_reg3(txt_clean_info)
+    reg2 = process_reg2(txt_no_eventuales, pay_day)
+    reg3 = process_reg3(txt_no_eventuales)
     reg4 = process_reg4(txt_clean_info)
+    reg5 = process_reg5(txt_just_eventuales) if txt_just_eventuales else ''
 
     print(reg1)
     print("*" * 100)
@@ -194,5 +232,7 @@ def export_txt(request):
     print(reg3)
     print("*" * 100)
     print(reg4)
+    print("*" * 100)
+    print(reg5)
 
-    return render(request, 'export_lsd/test.html', {'to_print': reg4})
+    return render(request, 'export_lsd/test.html', {'to_print': reg5})

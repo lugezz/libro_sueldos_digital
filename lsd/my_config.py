@@ -13,6 +13,7 @@ def lsd_cfg():
             'porc_sindicato': 2,
             'remun_sindicato': 9,
             'area': 'Administración',
+            'cuit_empleador_eventuales': 30692273725,
         },
     }
 

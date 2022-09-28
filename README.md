@@ -19,4 +19,6 @@ _Retroactivos no tratados_
 
 _Pendiente tratar análisis sobre el tope_
 
+_Eventuales: Pendiente fecha de ingreso y de egreso_
+
 </sub>
