@@ -32,6 +32,13 @@ Este valor es obligatorio cuando se informa un código de concepto asociado a lo
 3,Período de ajuste retroactivo,6,46,51,AN,"Formato: AAAAMM.
 Para los conceptos liquidados del período este valor se informa con blancos. 
 Si hace referencia a una liquidación retroactiva del concepto, se debe informar el período. Este dato es solo informativo."
+4,Identificación del tipo de registro,2,1,2,AL,Fijo '04'
+4,CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
+4,Cónyuge,1,14,14,NU,
+4,Cant Hijos,2,15,16,NU,
+4,CCT,1,17,17,AN,0 y 1 ó F y T
+4,SVO,1,18,18,AN,0 y 1 ó F y T
+4,Reducción,1,19,19,AN,0 y 1 ó F y T
 4,código de tipo de empleador asociado al trabajador,1,20,20,AN,
 4,código de tipo de operación,1,21,21,AN,Valor fijo: ?0?
 4,código de situación de revista,2,22,23,AN,Valores permitidos: los existentes en la tabla ?Situación de Revista? de Declaración en Línea.

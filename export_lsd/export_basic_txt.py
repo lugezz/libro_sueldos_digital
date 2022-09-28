@@ -3,7 +3,9 @@ from datetime import date, datetime
 from django.shortcuts import render
 
 from lsd.my_config import lsd_cfg
-from export_lsd.utils import get_value_from_txt
+from export_lsd.models import OrdenRegistro
+from export_lsd.utils import (amount_txt_to_integer, exclude_eventuales,
+                              get_value_from_txt, NOT_OS_INSSJP, NOT_SIJP)
 
 
 def process_reg1(cuit: str, pay_day: date, employees: int):
@@ -44,9 +46,11 @@ def process_reg2(txt_info: str, payday: date):
     Fecha de rúbrica	8	107	114
     Forma de pago	1	115	115
     """
+    # Excluir eventuales
+    clean_txt_info = exclude_eventuales(txt_info)
     resp = []
     leg = 1
-    for legajo in txt_info:
+    for legajo in clean_txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
         # TODO: Get user
         area = lsd_cfg()['default'].get('area', '').ljust(50)
@@ -76,17 +80,25 @@ def process_reg3(txt_info):
     Indicador Débito / Crédito	1	45	45
     Período de ajuste retroactivo	6	46	51
     """
+    # Excluir eventuales
+    clean_txt_info = exclude_eventuales(txt_info)
     resp = []
     leg = 1
-    for legajo in txt_info:
+    for legajo in clean_txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
-        mod_cont = get_value_from_txt(legajo, 'CUIL')
-        remun = float(get_value_from_txt(legajo, 'Remuneración Imponible 2')) / 100
-        no_rem_osysind = float(get_value_from_txt(legajo, 'Remuneración Imponible 9')) / 100 - remun
-        no_remun = float(get_value_from_txt(legajo, 'Conceptos no remunerativos')) / 100 - no_rem_osysind
-        ds_trab = get_value_from_txt(legajo, 'Cantidad de días trabajados').zfill(5)
-        
-        # TODO: Configurar casos como jubilados y directores
+        mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
+        cond = int(get_value_from_txt(legajo, 'Codigo de Condición'))
+        convenc = get_value_from_txt(legajo, 'Trabajador Convencionado 0-No 1-Si')
+
+        rem2 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+        rem4 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
+        rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
+
+        remun = rem2
+
+        no_rem_osysind = rem9 - remun
+        no_remun = amount_txt_to_integer(get_value_from_txt(legajo, 'Conceptos no remunerativos')) - no_rem_osysind
+        ds_trab = str(amount_txt_to_integer(get_value_from_txt(legajo, 'Cantidad de días trabajados'))).zfill(5)
 
         # TODO: Get user
         ccn_sueldo = lsd_cfg()['default'].get('ccn_sueldo', '').ljust(10)
@@ -99,22 +111,38 @@ def process_reg3(txt_info):
         porc_sindicato = lsd_cfg()['default'].get('porc_sindicato', 0)
 
         # Sueldo
-        item = f'03{cuil}{ccn_sueldo}{ds_trab}1{str(remun).zfill(15)}C{" " * 6}'
+        item = f'03{cuil}{ccn_sueldo}{ds_trab}D{str(remun).zfill(15)}C{" " * 6}'
         resp.append(item)
         # No Remunerativo
         if int(no_remun) > 0:
-            item = f'03{cuil}{ccn_no_rem}{ds_trab}1{str(no_remun).zfill(15)}C{" " * 6}'
+            item = f'03{cuil}{ccn_no_rem}{ds_trab}D{str(no_remun).zfill(15)}C{" " * 6}'
             resp.append(item)
 
         # No Remunerativo OS y Sindicato
         if int(no_rem_osysind) > 0:
-            item = f'03{cuil}{ccn_no_osysind}{ds_trab}1{str(no_rem_osysind).zfill(15)}C{" " * 6}'
+            item = f'03{cuil}{ccn_no_osysind}{ds_trab}D{str(no_rem_osysind).zfill(15)}C{" " * 6}'
             resp.append(item)
 
         # Aporte SIJP
-        item = f'03{cuil}{ccn_sijp}{ds_trab}1{str(remun).zfill(15)}C{" " * 6}'
-        resp.append(item)
+        if mod_cont not in NOT_SIJP:
+            ap_sijp = round(rem2 * 0.11)
+            item = f'03{cuil}{ccn_sijp}{"0" * 5} {str(ap_sijp).zfill(15)}D{" " * 6}'
+            resp.append(item)
 
+        # Aporte INSSJP y OS
+        if mod_cont not in NOT_OS_INSSJP and cond != 2:
+            ap_inssjp = round(rem2 * 0.03)
+            ap_os = round(rem4 * 0.03)
+            item = f'03{cuil}{ccn_inssjp}{"0" * 5} {str(ap_inssjp).zfill(15)}D{" " * 6}'
+            resp.append(item)
+            item = f'03{cuil}{ccn_os}{"0" * 5} {str(ap_os).zfill(15)}D{" " * 6}'
+            resp.append(item)
+
+        # Aporte Sindicato
+        if porc_sindicato > 0 and (convenc == '1' or convenc == 'T'):
+            ap_sindicato = round((remun + no_rem_osysind) * porc_sindicato / 100)
+            item = f'03{cuil}{ccn_sindicato}{"0" * 5} {str(ap_sindicato).zfill(15)}D{" " * 6}'
+            resp.append(item)
 
         leg += 1
 
@@ -124,7 +152,19 @@ def process_reg3(txt_info):
 
 
 def process_reg4(txt_info):
-    pass
+    resp = ''
+    reg4_qs = OrdenRegistro.objects.filter(tiporegistro__order=4)
+
+    for reg in reg4_qs:
+        if reg.formatof931:
+            # Si está lo vinculo puliendo formato
+            pass
+
+        else:
+            # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
+            pass
+
+    return resp
 
 
 def process_reg5(txt_info):
@@ -144,9 +184,15 @@ def export_txt(request):
     txt_clean_info = [x for x in txt_info if len(x) > 2]
     reg1 = process_reg1(cuit, pay_day, len(txt_clean_info))
     reg2 = process_reg2(txt_clean_info, pay_day)
-    reg3 = process_reg3(txt_clean_info, pay_day)
+    reg3 = process_reg3(txt_clean_info)
+    reg4 = process_reg4(txt_clean_info)
 
     print(reg1)
+    print("*" * 100)
     print(reg2)
+    print("*" * 100)
+    print(reg3)
+    print("*" * 100)
+    print(reg4)
 
-    return render(request, 'export_lsd/test.html', {'to_print': reg3})
+    return render(request, 'export_lsd/test.html', {'to_print': reg4})

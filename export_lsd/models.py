@@ -19,23 +19,7 @@ class TipoRegistro(models.Model):
         ordering = ['order']
 
 
-class OrdenRegistro(models.Model):
-    tiporegistro = models.ForeignKey(TipoRegistro, on_delete=models.CASCADE)
-    name = models.CharField(max_length=120)
-    fromm = models.PositiveSmallIntegerField()
-    long = models.PositiveSmallIntegerField()
-    type = models.CharField(max_length=2, choices=DATA_TYPE, default='AN')
-    description = models.TextField()
-
-    def __str__(self):
-        return f'{str(self.tiporegistro.order)} - From: {self.fromm} - {self.name}'
-
-    class Meta:
-        ordering = ['tiporegistro__order', 'fromm']
-
-
 class Formato931(models.Model):
-    ordenregistro = models.ForeignKey(OrdenRegistro, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=150)
     fromm = models.PositiveSmallIntegerField()
     long = models.PositiveSmallIntegerField()
@@ -45,6 +29,24 @@ class Formato931(models.Model):
 
     class Meta:
         ordering = ['fromm']
+
+
+class OrdenRegistro(models.Model):
+    tiporegistro = models.ForeignKey(TipoRegistro, on_delete=models.CASCADE)
+    formatof931 = models.ForeignKey(Formato931, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=120)
+    fromm = models.PositiveSmallIntegerField()
+    long = models.PositiveSmallIntegerField()
+    type = models.CharField(max_length=2, choices=DATA_TYPE, default='AN')
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        has_f931 = '' if not self.formatof931 else ' (Link F931)'
+
+        return f'{str(self.tiporegistro.order)} - From: {self.fromm} - {self.name}{has_f931}'
+
+    class Meta:
+        ordering = ['tiporegistro__order', 'fromm']
 
 
 class Empresa(models.Model):
