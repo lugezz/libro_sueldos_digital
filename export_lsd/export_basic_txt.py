@@ -3,7 +3,7 @@ from datetime import date, datetime
 from django.shortcuts import render
 
 from lsd.my_config import lsd_cfg
-from tables.utils import get_value_from_txt
+from export_lsd.utils import get_value_from_txt
 
 
 def process_reg1(cuit: str, pay_day: date, employees: int):
@@ -80,11 +80,12 @@ def process_reg3(txt_info):
     leg = 1
     for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
+        mod_cont = get_value_from_txt(legajo, 'CUIL')
         remun = float(get_value_from_txt(legajo, 'Remuneración Imponible 2')) / 100
         no_rem_osysind = float(get_value_from_txt(legajo, 'Remuneración Imponible 9')) / 100 - remun
         no_remun = float(get_value_from_txt(legajo, 'Conceptos no remunerativos')) / 100 - no_rem_osysind
-        ds_trab = int(get_value_from_txt(legajo, 'Cantidad de días trabajados'))
-
+        ds_trab = get_value_from_txt(legajo, 'Cantidad de días trabajados').zfill(5)
+        
         # TODO: Configurar casos como jubilados y directores
 
         # TODO: Get user
@@ -98,8 +99,22 @@ def process_reg3(txt_info):
         porc_sindicato = lsd_cfg()['default'].get('porc_sindicato', 0)
 
         # Sueldo
-        item = f'03{cuil} '
+        item = f'03{cuil}{ccn_sueldo}{ds_trab}1{str(remun).zfill(15)}C{" " * 6}'
         resp.append(item)
+        # No Remunerativo
+        if int(no_remun) > 0:
+            item = f'03{cuil}{ccn_no_rem}{ds_trab}1{str(no_remun).zfill(15)}C{" " * 6}'
+            resp.append(item)
+
+        # No Remunerativo OS y Sindicato
+        if int(no_rem_osysind) > 0:
+            item = f'03{cuil}{ccn_no_osysind}{ds_trab}1{str(no_rem_osysind).zfill(15)}C{" " * 6}'
+            resp.append(item)
+
+        # Aporte SIJP
+        item = f'03{cuil}{ccn_sijp}{ds_trab}1{str(remun).zfill(15)}C{" " * 6}'
+        resp.append(item)
+
 
         leg += 1
 
@@ -134,4 +149,4 @@ def export_txt(request):
     print(reg1)
     print(reg2)
 
-    return render(request, 'tables/test.html', {'to_print': reg3})
+    return render(request, 'export_lsd/test.html', {'to_print': reg3})

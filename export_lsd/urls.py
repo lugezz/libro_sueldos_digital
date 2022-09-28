@@ -1,10 +1,10 @@
 from django.urls import path
 
-from tables.export_db import exportaDB, exportaDB_f931
-from tables.export_txt import export_txt
-from tables.views import home_view
+from export_lsd.export_db import exportaDB, exportaDB_f931
+from export_lsd.export_basic_txt import export_txt
+from export_lsd.views import home_view
 
-app_name = 'tables'
+app_name = 'export_lsd'
 
 urlpatterns = [
     path('', home_view, name='home'),

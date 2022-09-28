@@ -12,7 +12,7 @@ Tipo,Campo,Long,Desde,Hasta,Tipo2,Observación
 2,Identificacion del tipo de registro,2,1,2,AL,Fijo '02'
 2,CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
 2,Legajo del trabajador,10,14,23,AN,"Este valor es optativo. De no incluir detalle, completar con espacios."
-2,Dependencia de revista del trabajador,50,24,73,AN,"Es el área donde el trabajador desempeía sus funciones( Ej. departamento de ventas). Este valor es optativo. De no incluir detalle, completar con espacios."
+2,Dependencia de revista del trabajador,50,24,73,AN,"Es el área donde el trabajador desempeña sus funciones( Ej. departamento de ventas). Este valor es optativo. De no incluir detalle, completar con espacios."
 2,CBU de acreditación del pago,22,74,95,AN,"Se valida de acuerdo a las reglas definidas por el BCRA. Sólo se informa si ""forma de pago"" es igual a '3' (acreditación en cuenta)"
 2,Cantidad de días para proporcionar tope,3,96,98,NU,"3 enteros. Este valor se utiliza para proporcionar en más o en menos la base imponible máxima o ?tope? para el cálculo de los descuentos de aportes al trabajador (SIPA, INSSJyP y obra social/Fondo Solidario de Redistribución).Si la liquidación no corresponde a período de inicio o fin de la relación laboral o relacionada con vacaciones, este valor debe informarse en 0."
 2,Fecha de pago,8,99,106,NU,Formato: AAAAMMDD
@@ -75,7 +75,7 @@ Si hace referencia a una liquidación retroactiva del concepto, se debe informar
 5,Identificacion del tipo de registro,2,1,2,AN,Fijo '05'
 5,CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
 5,Categoría profesional,6,14,19,NU,Según tabla de codificación específica de Simplificación registral.
-5,Puesto desempeíado,4,20,23,AN,Según tabla de codificación específica de Simplificación registral.
+5,Puesto desempeñado,4,20,23,AN,Según tabla de codificación específica de Simplificación registral.
 5,Fecha de ingreso,8,24,31,NU,"Formato: AAAAMMDD.
 Es la fecha dentro del período declarado en la que inicia la prestación de servicios en la Empresa Usuaria.
 Puede haber iniciado su relación laboral en meses anteriores."

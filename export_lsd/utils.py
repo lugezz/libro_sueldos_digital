@@ -1,4 +1,4 @@
-from tables.models import Formato931
+from export_lsd.models import Formato931
 
 
 def get_value_from_txt(txt_line: str, field_name: str) -> str:

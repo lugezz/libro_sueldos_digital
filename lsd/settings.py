@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Own apps
-    'tables',
+    'export_lsd',
 ]
 
 MIDDLEWARE = [

@@ -2,7 +2,7 @@ import csv
 
 from django.shortcuts import redirect
 
-from tables.models import Formato931, OrdenRegistro, TipoRegistro
+from export_lsd.models import Formato931, OrdenRegistro, TipoRegistro
 
 
 def exportaDB(request):
@@ -24,7 +24,7 @@ def exportaDB(request):
 
         p.save()
 
-    return redirect('tables:home')
+    return redirect('export_lsd:home')
 
 
 def exportaDB_f931(request):
@@ -42,4 +42,4 @@ def exportaDB_f931(request):
 
         p.save()
 
-    return redirect('tables:home')
+    return redirect('export_lsd:home')
