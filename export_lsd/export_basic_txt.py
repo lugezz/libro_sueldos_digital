@@ -93,32 +93,39 @@ def process_reg3(txt_info):
 
         remun = rem2
 
-        no_rem_osysind = rem9 - remun
-        no_remun = amount_txt_to_integer(get_value_from_txt(legajo, 'Conceptos no remunerativos')) - no_rem_osysind
+        no_rem_especial = rem9 - remun
+        no_remun = amount_txt_to_integer(get_value_from_txt(legajo, 'Conceptos no remunerativos')) - no_rem_especial
         ds_trab = str(amount_txt_to_integer(get_value_from_txt(legajo, 'Cantidad de días trabajados'))).zfill(5)
 
         # TODO: Get user
         ccn_sueldo = lsd_cfg()['default'].get('ccn_sueldo', '').ljust(10)
         ccn_no_rem = lsd_cfg()['default'].get('ccn_no_rem', '').ljust(10)
         ccn_no_osysind = lsd_cfg()['default'].get('ccn_no_osysind', '').ljust(10)
+        ccn_no_sind = lsd_cfg()['default'].get('ccn_no_sind', '').ljust(10)
         ccn_sijp = lsd_cfg()['default'].get('ccn_sijp', '').ljust(10)
         ccn_inssjp = lsd_cfg()['default'].get('ccn_inssjp', '').ljust(10)
         ccn_os = lsd_cfg()['default'].get('ccn_os', '').ljust(10)
         ccn_sindicato = lsd_cfg()['default'].get('ccn_sindicato', '').ljust(10)
         porc_sindicato = lsd_cfg()['default'].get('porc_sindicato', 0)
+        tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
 
         # Sueldo
         item = f'03{cuil}{ccn_sueldo}{ds_trab}D{str(remun).zfill(15)}C{" " * 6}'
         resp.append(item)
+
         # No Remunerativo
         if int(no_remun) > 0:
             item = f'03{cuil}{ccn_no_rem}{ds_trab}D{str(no_remun).zfill(15)}C{" " * 6}'
             resp.append(item)
 
-        # No Remunerativo OS y Sindicato
-        if int(no_rem_osysind) > 0:
-            item = f'03{cuil}{ccn_no_osysind}{ds_trab}D{str(no_rem_osysind).zfill(15)}C{" " * 6}'
-            resp.append(item)
+        # No Remunerativo Especial
+        if int(no_rem_especial) > 0:
+            if tipo_nr == 1:
+                item = f'03{cuil}{ccn_no_sind}{ds_trab}D{str(no_rem_especial).zfill(15)}C{" " * 6}'
+                resp.append(item)
+            elif tipo_nr == 2:
+                item = f'03{cuil}{ccn_no_osysind}{ds_trab}D{str(no_rem_especial).zfill(15)}C{" " * 6}'
+                resp.append(item)
 
         # Aporte SIJP
         if mod_cont not in NOT_SIJP:
@@ -137,7 +144,7 @@ def process_reg3(txt_info):
 
         # Aporte Sindicato
         if porc_sindicato > 0 and (convenc == '1' or convenc == 'T'):
-            ap_sindicato = round((remun + no_rem_osysind) * porc_sindicato / 100)
+            ap_sindicato = round((remun + no_rem_especial) * porc_sindicato / 100)
             item = f'03{cuil}{ccn_sindicato}{"0" * 5} {str(ap_sindicato).zfill(15)}D{" " * 6}'
             resp.append(item)
 
@@ -154,20 +161,58 @@ def process_reg4(txt_info):
 
     for legajo in txt_info:
         linea = ''
+        mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
+        rem2 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+        rem4 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
+        rem8 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
+        rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
+        rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+        detr = amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
+
         for reg in reg4_qs:
             if reg.formatof931:
                 # Si está lo vinculo puliendo formato
-                print(reg.formatof931.name)
-                linea += sync_format(get_value_from_txt(legajo, reg.formatof931.name), reg.long, reg.type)
+                tmp_linea = sync_format(get_value_from_txt(legajo, reg.formatof931.name), reg.long, reg.type)
+                if (reg.formatof931.name == 'Cónyuge' or
+                        reg.formatof931.name == 'Trabajador Convencionado 0-No 1-Si' or
+                        reg.formatof931.name == 'Seguro Colectivo de Vida Obligatorio' or
+                        reg.formatof931.name == 'Marca de Corresponde Reducción'):
+
+                    tmp_linea = tmp_linea.replace('T', '1').replace('F', '0')
+
+                linea += tmp_linea
 
             else:
                 # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
                 if reg.name == 'Identificación del tipo de registro':
                     linea += '04'
                 elif reg.name == 'Base imponible 10':
-                    rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
-                    rem10 -= amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
+                    rem10 = rem10 - detr
+
+                    if detr == 0 or mod_cont in NOT_SIJP:
+                        rem10 = 0
+
                     linea += str(rem10).zfill(15)
+                elif reg.name == 'Base para el cálculo diferencial de aporte de obra social y FSR (1)':
+                    # Valido R4
+                    # R4 = Rem + NR OS y Sind + Ap.Ad.OS
+                    # Ap.Ad.OS = R4 - Rem - NR OS y Sind
+                    # TODO: Get user
+                    tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
+                    resta = rem2 if tipo_nr != 2 else rem9
+                    aa_os = rem4 - resta
+                    linea += str(aa_os).zfill(15)
+
+                elif reg.name == 'Base para el cálculo diferencial de contribuciones de obra social y FSR (1)':
+                    # Valido R8
+                    # R8 = Rem + NR OS y Sind + Ct.Ad.OS
+                    # Ct.Ad.OS = R8 - Rem - NR OS y Sind
+                    # TODO: Get user
+                    tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
+                    resta = rem2 if tipo_nr != 2 else rem9
+                    aa_os = rem8 - resta
+                    linea += str(aa_os).zfill(15)
+
                 else:
                     linea += "0" * reg.long
 
@@ -208,11 +253,13 @@ def process_reg5(txt_info):
 # def export_txt(txt_file, cuit: str, pay_day: date):
 def export_txt(request):
     # TODO: Own process
-    txt_file = 'tmp/SD_test.txt'
-    pay_day = datetime.strptime('2022-08-31', '%Y-%m-%d')
-    cuit = '20123456780'
+    txt_file = 'tmp/SD_2022-08.txt'
+    txt_output_file = f'tmp/exp_{datetime.now().strftime("%Y%m%d_%H%M")}.txt'
 
-    with open(txt_file) as f:
+    pay_day = datetime.strptime('2022-08-31', '%Y-%m-%d')
+    cuit = '30717160629'
+
+    with open(txt_file, encoding='latin-1') as f:
         txt_info = f.readlines()
 
     txt_clean_info = [x for x in txt_info if len(x) > 2]
@@ -225,14 +272,12 @@ def export_txt(request):
     reg4 = process_reg4(txt_clean_info)
     reg5 = process_reg5(txt_just_eventuales) if txt_just_eventuales else ''
 
-    print(reg1)
-    print("*" * 100)
-    print(reg2)
-    print("*" * 100)
-    print(reg3)
-    print("*" * 100)
-    print(reg4)
-    print("*" * 100)
-    print(reg5)
+    final_result = reg1 + '\n' + reg2 + '\n' + reg3 + '\n' + reg4
+    if reg5:
+        final_result += '\n' + reg5
 
-    return render(request, 'export_lsd/test.html', {'to_print': reg5})
+    # TODO: Change to ANSI
+    with open(txt_output_file, 'w') as f:
+        f.write(final_result)
+
+    return render(request, 'export_lsd/test.html', {'to_print': final_result})

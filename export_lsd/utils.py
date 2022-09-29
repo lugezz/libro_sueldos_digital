@@ -44,7 +44,7 @@ def just_eventuales(txt_info: str) -> str:
 def sync_format(info: str, expected_len: int, type_info: str) -> str:
     resp = info
 
-    if len(info) != expected_len:
+    if len(info) != expected_len or ',' in info:
         if len(info) > expected_len:
             resp = round(float(info.replace(',', '.').strip()))
             resp = str(resp).zfill(expected_len)
