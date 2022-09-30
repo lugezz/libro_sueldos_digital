@@ -253,11 +253,11 @@ def process_reg5(txt_info):
 # def export_txt(txt_file, cuit: str, pay_day: date):
 def export_txt(request):
     # TODO: Own process
-    txt_file = 'tmp/SD_2022-08.txt'
+    txt_file = 'tmp/SD_2022-07.txt'
     txt_output_file = f'tmp/exp_{datetime.now().strftime("%Y%m%d_%H%M")}.txt'
 
-    pay_day = datetime.strptime('2022-08-31', '%Y-%m-%d')
-    cuit = '30717160629'
+    pay_day = datetime.strptime('2022-07-31', '%Y-%m-%d')
+    cuit = '30715119850'
 
     with open(txt_file, encoding='latin-1') as f:
         txt_info = f.readlines()
