@@ -63,7 +63,7 @@ def process_reg2(txt_info: str, payday: date):
 
         resp.append(item)
 
-    resp_final = '\n'.join(resp)
+    resp_final = '\r\n'.join(resp)
 
     return resp_final
 
@@ -150,7 +150,7 @@ def process_reg3(txt_info):
 
         leg += 1
 
-    resp_final = '\n'.join(resp)
+    resp_final = '\r\n'.join(resp)
 
     return resp_final
 
@@ -218,7 +218,7 @@ def process_reg4(txt_info):
 
         resp.append(linea)
 
-    resp_final = '\n'.join(resp)
+    resp_final = '\r\n'.join(resp)
 
     return resp_final
 
@@ -245,7 +245,7 @@ def process_reg5(txt_info):
 
         resp.append(item)
 
-    resp_final = '\n'.join(resp)
+    resp_final = '\r\n'.join(resp)
 
     return resp_final
 
@@ -272,12 +272,12 @@ def export_txt(request):
     reg4 = process_reg4(txt_clean_info)
     reg5 = process_reg5(txt_just_eventuales) if txt_just_eventuales else ''
 
-    final_result = reg1 + '\n' + reg2 + '\n' + reg3 + '\n' + reg4
+    final_result = reg1 + '\r\n' + reg2 + '\r\n' + reg3 + '\r\n' + reg4
     if reg5:
-        final_result += '\n' + reg5
+        final_result += '\r\n' + reg5
 
     # TODO: Change to ANSI
-    with open(txt_output_file, 'w') as f:
+    with open(txt_output_file, 'w', encoding='cp1252') as f:
         f.write(final_result)
 
     return render(request, 'export_lsd/test.html', {'to_print': final_result})
