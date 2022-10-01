@@ -257,7 +257,7 @@ def export_txt(request):
     txt_output_file = f'tmp/exp_{datetime.now().strftime("%Y%m%d_%H%M")}.txt'
 
     pay_day = datetime.strptime('2022-07-31', '%Y-%m-%d')
-    cuit = '30715119850'
+    cuit = '30715119123'
 
     with open(txt_file, encoding='latin-1') as f:
         txt_info = f.readlines()
