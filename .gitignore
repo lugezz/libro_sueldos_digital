@@ -3,3 +3,4 @@ env/
 SD_20*.txt
 exp_*.txt
 *.xlsx
+*.pyc

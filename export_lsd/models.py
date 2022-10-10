@@ -53,6 +53,26 @@ class Empresa(models.Model):
     name = models.CharField(max_length=120, verbose_name='Razon Social')
     cuit = models.CharField(max_length=11, validators=[MinLengthValidator(11)])
 
+    def __str__(self) -> str:
+        return self.name
+
+
+class Empleado(models.Model):
+    name = models.CharField(max_length=120, verbose_name='Nombre', null=True, blank=True)
+    cuil = models.CharField(max_length=11, validators=[MinLengthValidator(11)])
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class EmpresaEmpleado(models.Model):
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
+    leg = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return f'{self.empresa} - {self.leg} - {self.empleado}'
+
 
 class Registro(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
