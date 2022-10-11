@@ -1,104 +1,77 @@
 {% load static %}
-
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Conta - LSD - {% block title %}{% endblock %}</title>
-    {% block css %}
-        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
-        <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
-    {% endblock %}
-</head>
-<body class="sb-nav-fixed">
-    {% include 'navbar.html' %}
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
-                <div class="sb-sidenav-menu">
-                    <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Core</div>
-                        <a class="nav-link" href="index.html">
-                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                            Dashboard
-                        </a>
-                        <div class="sb-sidenav-menu-heading">Interface</div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
-                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                            Layouts
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="layout-static.html">Static Navigation</a>
-                                <a class="nav-link" href="layout-sidenav-light.html">Light Sidenav</a>
-                            </nav>
-                        </div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
-                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            Pages
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
-                                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseAuth" aria-expanded="false" aria-controls="pagesCollapseAuth">
-                                    Authentication
-                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                                </a>
-                                <div class="collapse" id="pagesCollapseAuth" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
-                                    <nav class="sb-sidenav-menu-nested nav">
-                                        <a class="nav-link" href="login.html">Login</a>
-                                        <a class="nav-link" href="register.html">Register</a>
-                                        <a class="nav-link" href="password.html">Forgot Password</a>
-                                    </nav>
-                                </div>
-                                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseError" aria-expanded="false" aria-controls="pagesCollapseError">
-                                    Error
-                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                                </a>
-                                <div class="collapse" id="pagesCollapseError" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
-                                    <nav class="sb-sidenav-menu-nested nav">
-                                        <a class="nav-link" href="401.html">401 Page</a>
-                                        <a class="nav-link" href="404.html">404 Page</a>
-                                        <a class="nav-link" href="500.html">500 Page</a>
-                                    </nav>
-                                </div>
-                            </nav>
-                        </div>
-                        <div class="sb-sidenav-menu-heading">Addons</div>
-                        <a class="nav-link" href="charts.html">
-                            <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
-                            Charts
-                        </a>
-                        <a class="nav-link" href="tables.html">
-                            <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
-                            Tables
-                        </a>
-                    </div>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'lib/bootstrap-4.6.1-dist/css/bootstrap.min.css' %}" crossorigin="anonymous">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+
+    <!--Font awesome icons -->
+    <link rel="stylesheet" href="{% static 'lib/fontawesome-5.15.4/css/all.css' %}" crossorigin="anonymous">
+
+    <!--Favicon -->
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/favicon.ico' %}"/>
+	
+    <title>El Conta - {% block title %}{% endblock %} </title>
+</head>
+<body>
+  <div class="container p-3 my-3">
+    <div class="row">
+      <div class="col-md-12">
+        <nav class="navbar navbar-expand-md navbar-light " style="background-color: #f0f5f5">
+          <a href="/" class="navbar-brand">Home</a>
+            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <div class="navbar-nav ml-auto">
+                  {% if user.is_authenticated %}
+                    <a href="#" class="nav-item nav-link hovertext" data-hover="Perfil">
+                      <i class="fa fa-user fa-xl" aria-hidden="true"></i>
+                    </a>
+                    <a href="mailto:elconta@eugeniovazquez.com.ar" class="nav-item nav-link hovertext" data-hover="Contactame">
+                      <i class="fas fa-envelope fa-xl"></i>
+                    </a>
+                    <a href="#" class="nav-item nav-link hovertext" data-hover="Cerrar Sesión">
+                      <i class="fa fa-power-off fa-xl"></i>
+                    </a>
+                  {% else %}
+                    <a href="{% url 'login' %}" class="nav-item nav-link">Iniciar Sesión</a>
+                  {% endif %}
+
                 </div>
-                <div class="sb-sidenav-footer">
-                    <div class="small">Logged in as:</div>
-                    Start Bootstrap
-                </div>
-            </nav>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                {% block content %}
-                {% endblock %}
-            </main>
-            {% include 'footer.html' %}
-        </div>
+            </div>
+        </nav>
+        <!--Any flash messages pop up in any page because this is the base template-->
+        {% if messages %}
+          <div class="alert alert-dismissible" role="alert">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
     </div>
 
-    {% block js %}
-        <script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="{% static 'js/scripts.js' %}"></script>
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
-    {% endblock %}
-</body>
+    {% include 'footer.html' %}
+  </div>
+  </body>
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="{% static 'lib/jquery-3.6.0.min.js' %}"</script>
+    <script src="{% static 'lib/popper.min.js' %}"</script>
+    <script src="{% static 'lib/bootstrap-4.6.1-dist/js/bootstrap.min.js' %}"</script>
+  
+    <!-- A plugin for password show/hide  -->
+    <script src="{% static 'lib/bootstrap-4.6.1-dist/js/bootstrap-show-password.min.js' %}"</script>
+    
 </html>

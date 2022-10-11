@@ -1,5 +1,8 @@
+from crum import get_current_user
+from django.contrib.auth.models import User
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.forms.models import model_to_dict
 
 DATA_TYPE = [
     ('AL', 'Alfabético'),
@@ -52,9 +55,23 @@ class OrdenRegistro(models.Model):
 class Empresa(models.Model):
     name = models.CharField(max_length=120, verbose_name='Razon Social')
     cuit = models.CharField(max_length=11, validators=[MinLengthValidator(11)])
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        user = get_current_user()
+        if user and not user.pk:
+            user = None
+        if not self.pk:
+            self.user = user
+        self.user = user
+        return super().save(force_insert, force_update, using, update_fields)
+
+    def toJSON(self):
+        item = model_to_dict(self)
+        return item
 
 
 class Empleado(models.Model):
@@ -72,6 +89,12 @@ class EmpresaEmpleado(models.Model):
 
     def __str__(self):
         return f'{self.empresa} - {self.leg} - {self.empleado}'
+
+    def toJSON(self):
+        item = model_to_dict(self)
+        item['empresa'] = self.empresa.toJSON()
+        item['empleado'] = self.empleado.toJSON()
+        return item
 
 
 class Registro(models.Model):

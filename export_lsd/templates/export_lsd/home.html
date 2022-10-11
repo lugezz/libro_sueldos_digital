@@ -1,12 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
-    <h1>Hello - Home Page</h1>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %} Exportador LSD {% endblock title%}
+{% block content %}
+    <div class="container jumbotron2">
+        <h1 class="display-4 mb-3">Exportador LSD</h1>
+        <p class="lead">
+            Este es el sistema <b>Exportador Libro Sueldos Digitales</b> desarrollado con la finalidad de simplificar
+            el proceso de generación de archivos para la presentación de Libro Sueldos Digitales y en consecuencia F.931.
+        </p>
+
+        <!--Selección de Período y liquidaciones -->
+        <div class="container">
+            <div class="row">
+                <!--Descarga-->
+                <div class="col-sm">
+                    <!--Formulario -->
+                    <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                        <h5 class="mt-2 text-info">Seleccione Período</h5>
+                        <input type="month" id="period" name="period" min="2018-03" value={{ this_month }}>
+                        <!--TODO: Acceso a agregado liquidaciones-->    
+                        <h5 class="mt-2 text-info">Seleccione archivo exportación Liquidación</h5>
+                        <input type="file" name="upload" accept=".zip">
+                        <br>
+                        <button class="btn btn-dark my-3" type="submit">Procesar</button>
+                    </form>
+        
+                    <!--Resumen-->
+                    <u><h5 class="mt-1 ml-1 text-info">Resumen Liquidaciones</h5></u>
+                        {% if listado %}
+                        <div class="container">
+                            <a class="btn btn-dark mr-4 mt-2 .btn-lg" href="{% url 'export_lsd:home'%} ">Limpiar</a>
+                            <a class="btn btn-success mt-2 .btn-lg" href="#">Exportar</a>
+                            <p class="card-text"><small class="text-muted">{{ listado|length }} archivos descargados</small></p>
+                        </div>
+                        <div class="card" style="width: 80%;">
+                            <ul class="list-group list-group-flush">
+                                {% for file_name in listado %}
+                                    <li class="list-group-item">
+                                        <a href="#">{{ file_name }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p class="card-text"><small class="text-muted">Sin archivos aun</small></p>
+                    {% endif %}
+                </div>
+                <!--Historial-->    
+                <div class="col-sm">
+                    <h5 class="mt-2 ml-5 text-info">Presentaciones Anteriores</h4>
+                    <div class="container">
+                        {% if query_historia %}
+                        <div class="card" style="width: 80%;">
+                            <ul class="list-group list-group-flush">
+                                {% for registro in query_historia %}
+                                    <li class="list-group-item text-center">
+                                        <a href="{% url 'presentaciones' registro.id %}">{{ registro.fecha|date:"d/m/Y h:i a" }}</a>
+                                        <small class="text-muted">{{ registro.registers.count }} registros</small>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p class="card-text"><small class="text-muted">Sin procesos registrados aun</small></p>
+                    {% endif %}
+                    </div>            
+                </div>
+            </div>
+        </div>
+        <!--Fin selección-->
+    </div>
+
+{% endblock content %}
