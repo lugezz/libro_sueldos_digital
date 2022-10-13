@@ -14,7 +14,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
 
     # Empresas
-    path('empresa/list/', EmpresaListView.as_view(), name='empresa_list'),
+    path('empresa/', EmpresaListView.as_view(), name='empresa_list'),
     path('empresa/add/', EmpresaCreateView.as_view(), name='empresa_create'),
     path('empresa/update/<int:pk>/', EmpresaUpdateView.as_view(), name='empresa_update'),
     path('empresa/delete/<int:pk>/', EmpresaDeleteView.as_view(), name='empresa_delete'),
