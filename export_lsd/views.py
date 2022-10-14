@@ -308,3 +308,8 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
         context['entity'] = 'Empleados'
         context['list_url'] = reverse_lazy('export_lsd:empleado_list')
         return context
+
+
+# ------------- EXPORT ------------------------------------------------
+def export_basic(request):
+    pass
