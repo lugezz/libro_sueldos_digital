@@ -293,7 +293,7 @@ def export_basic(request):
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------
 class ConfigEBListView(LoginRequiredMixin, ListView):
     model = BasicExportConfig
-    template_name = 'export_lsd/empresa/list.html'
+    template_name = 'export_lsd/config-eb/list.html'
 
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
@@ -304,7 +304,8 @@ class ConfigEBListView(LoginRequiredMixin, ListView):
             action = request.POST['action']
             if action == 'searchdata':
                 data = []
-                for i in Empresa.objects.all():
+                # TODO: Filtrar por usuarios en todos lados
+                for i in BasicExportConfig.objects.all():
                     data.append(i.toJSON())
             else:
                 data['error'] = 'Ha ocurrido un error'
@@ -314,18 +315,18 @@ class ConfigEBListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Listado de Empresas'
-        context['create_url'] = reverse_lazy('export_lsd:empresa_create')
-        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
-        context['entity'] = 'Empresas'
+        context['title'] = 'Configuraciones de Exportaciones Básicas'
+        context['create_url'] = reverse_lazy('export_lsd:config_eb_create')
+        context['list_url'] = reverse_lazy('export_lsd:config_eb_list')
+        context['entity'] = 'ConfigEB'
         return context
 
 
-class EmpresaCreateView(LoginRequiredMixin, CreateView):
-    model = Empresa
+class ConfigEBCreateView(LoginRequiredMixin, CreateView):
+    model = BasicExportConfig
     form_class = EmpresaForm
-    template_name = 'export_lsd/empresa/create.html'
-    success_url = reverse_lazy('export_lsd:empresa_list')
+    template_name = 'export_lsd/config-eb/create.html'
+    success_url = reverse_lazy('export_lsd:config_eb_list')
     login_url = '/login/'
 
     def dispatch(self, request, *args, **kwargs):
@@ -355,7 +356,7 @@ class EmpresaCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class EmpresaUpdateView(LoginRequiredMixin, UpdateView):
+class ConfigEBUpdateView(LoginRequiredMixin, UpdateView):
     model = Empresa
     form_class = EmpresaForm
     template_name = 'export_lsd/empresa/create.html'
@@ -390,7 +391,7 @@ class EmpresaUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class EmpresaDeleteView(LoginRequiredMixin, DeleteView):
+class ConfigEBDeleteView(LoginRequiredMixin, DeleteView):
     model = Empresa
     form_class = EmpresaForm
     template_name = 'export_lsd/empresa/delete.html'
