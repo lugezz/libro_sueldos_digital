@@ -1,0 +1,19 @@
+{% extends 'export_lsd/list.html' %}
+{% load static %}
+{% block list_title %} Lista de Empleados{% endblock %}
+{% block head_list %}
+{% endblock %}
+
+{% block columns %}
+    <tr>
+        <th scope="col" style="width: 10%;">Leg</th>
+        <th scope="col" style="width: 30%;">Nombre</th>
+        <th scope="col" style="width: 30%;">Empresa</th>
+        <th scope="col" style="width: 15%;">CUIL</th>
+        <th scope="col" style="width: 15%;">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'js/empleado_list.js' %}"></script>
+{% endblock %}

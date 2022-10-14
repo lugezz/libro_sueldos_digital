@@ -11,9 +11,15 @@ DATA_TYPE = [
 ]
 
 FORMAS_PAGO = [
-    (1, 'Efectivo'),
-    (2, 'Cheque'),
-    (3, 'Acreditación'),
+    ('1', 'Efectivo'),
+    ('2', 'Cheque'),
+    ('3', 'Acreditación'),
+]
+
+TIPO_NR = [
+    ('0', 'Sólo NR'),
+    ('1', 'Base Sindicato'),
+    ('2', 'Base Sindicato y Obra Social')
 ]
 
 
@@ -96,6 +102,7 @@ class Empleado(models.Model):
 
     class Meta:
         ordering = ['empresa__name', 'leg']
+        unique_together = (('leg', 'empresa'),)
 
 
 class Registro(models.Model):
@@ -107,20 +114,20 @@ class Registro(models.Model):
 class BasicExportConfig(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=120, verbose_name='Nombre')
-    dia_base: models.PositiveSmallIntegerField()
-    'forma_pago': 1,
-    'ccn_sueldo': 'SUELDO',
-    'ccn_no_rem': 'ASNORE',
-    'ccn_no_osysind': 'ACUENR',
-    'ccn_no_sind': 'PRUEBA',
-    'ccn_sijp': 'JUBILA',
-    'ccn_inssjp': 'INSSJP',
-    'ccn_os': 'OBRSOC',
-    'ccn_sindicato': 'SINDIC',
-    'porc_sindicato': 4.5,
-    'tipo_nr': 2,  # 0: Sólo NR, 1: Base Sindicato, 2: Base Sindicato y Obra Social
-    'area': 'Administración',
-    'cuit_empleador_eventuales': 30692273725,
+    dias_base = models.PositiveSmallIntegerField(default=30, verbose_name='Días Base')
+    forma_pago = models.CharField(max_length=1, choices=FORMAS_PAGO, default='1', verbose_name='Forma de Pago')
+    ccn_sueldo = models.CharField(max_length=20, verbose_name='Concepto Sueldo')
+    ccn_no_rem = models.CharField(max_length=20, null=True, blank=True, verbose_name='Concepto NR')
+    ccn_no_osysind = models.CharField(max_length=20, null=True, blank=True, verbose_name='Concepto NR OS y Sind')
+    ccn_no_sind = models.CharField(max_length=20, null=True, blank=True, verbose_name='Concepto NR Sind.')
+    ccn_sijp = models.CharField(max_length=20, verbose_name='Concepto SIJP')
+    ccn_inssjp = models.CharField(max_length=20, verbose_name='Concepto INSSJP')
+    ccn_os = models.CharField(max_length=20, verbose_name='Concepto OS')
+    ccn_sindicato = models.CharField(max_length=20, null=True, blank=True, verbose_name='Concepto Sindicato')
+    porc_sindicato = models.FloatField(default=0, verbose_name='Porcentaje Sindicato')
+    tipo_nr = models.CharField(max_length=1, choices=TIPO_NR, default='2', verbose_name='Tipo NR')
+    area = models.CharField(max_length=120, default='Administración', verbose_name='Área de Trabajo')
+    cuit_empleador_eventuales = models.IntegerField(null=True, blank=True, verbose_name='CUIT Empresa Eventual')
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         user = get_current_user()
@@ -133,3 +140,6 @@ class BasicExportConfig(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} - {self.name}'
+
+    class Meta:
+        unique_together = (('user', 'name'),)

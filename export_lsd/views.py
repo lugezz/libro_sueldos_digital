@@ -4,10 +4,10 @@ from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http.response import JsonResponse
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
-from export_lsd.models import Empleado, Empresa, Registro
+from export_lsd.models import BasicExportConfig, Empleado, Empresa, Registro
 from export_lsd.forms import EmpresaForm, EmpleadoForm
 
 
@@ -166,31 +166,6 @@ class EmpresaDeleteView(LoginRequiredMixin, DeleteView):
         return context
 
 
-class EmpresaFormView(LoginRequiredMixin, FormView):
-    form_class = EmpresaForm
-    template_name = "export_lsd/empresa/create.html"
-    success_url = reverse_lazy("export_lsd:empresa_list")
-
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        print(form.is_valid())
-        print(form)
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        return super().form_invalid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Form | Empresa'
-        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
-        context['entity'] = 'Empresas'
-        context['action'] = 'add'
-        return context
-
-
 # ------------- EMPLEADOS ------------------------------------------------
 class EmpleadoListView(LoginRequiredMixin, ListView):
     model = Empleado
@@ -313,3 +288,130 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
 # ------------- EXPORT ------------------------------------------------
 def export_basic(request):
     pass
+
+
+# ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------
+class ConfigEBListView(LoginRequiredMixin, ListView):
+    model = BasicExportConfig
+    template_name = 'export_lsd/empresa/list.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            action = request.POST['action']
+            if action == 'searchdata':
+                data = []
+                for i in Empresa.objects.all():
+                    data.append(i.toJSON())
+            else:
+                data['error'] = 'Ha ocurrido un error'
+        except Exception as e:
+            data['error'] = str(e)
+        return JsonResponse(data, safe=False)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Listado de Empresas'
+        context['create_url'] = reverse_lazy('export_lsd:empresa_create')
+        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
+        context['entity'] = 'Empresas'
+        return context
+
+
+class EmpresaCreateView(LoginRequiredMixin, CreateView):
+    model = Empresa
+    form_class = EmpresaForm
+    template_name = 'export_lsd/empresa/create.html'
+    success_url = reverse_lazy('export_lsd:empresa_list')
+    login_url = '/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            action = request.POST['action']
+            if action == 'add':
+                form = self.get_form()  # Es lo mismo que escribir form = EmpresaForm(request.POST)
+                data = form.save()
+            else:
+                data['error'] = 'No ha ingresado a ninguna opción'
+
+        except Exception as e:
+            data['error'] = str(e)
+
+        return JsonResponse(data)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Agregar Empresa'
+        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
+        context['entity'] = 'Empresas'
+        context['action'] = 'add'
+        return context
+
+
+class EmpresaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Empresa
+    form_class = EmpresaForm
+    template_name = 'export_lsd/empresa/create.html'
+    success_url = reverse_lazy('export_lsd:empresa_list')
+    login_url = '/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            action = request.POST['action']
+            if action == 'edit':
+                form = self.get_form()  # Es lo mismo que escribir form = EmpresaForm(request.POST)
+                data = form.save()
+            else:
+                data['error'] = 'No ha ingresado a ninguna opción'
+
+        except Exception as e:
+            data['error'] = e
+
+        return JsonResponse(data)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edición de Empresa'
+        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
+        context['entity'] = 'Empresas'
+        context['action'] = 'edit'
+        return context
+
+
+class EmpresaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Empresa
+    form_class = EmpresaForm
+    template_name = 'export_lsd/empresa/delete.html'
+    success_url = reverse_lazy('export_lsd:empresa_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            self.object.delete()
+        except Exception as e:
+            data['error'] = e
+
+        return JsonResponse(data)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Eliminar Empresa'
+        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
+        context['entity'] = 'Empresas'
+        return context
