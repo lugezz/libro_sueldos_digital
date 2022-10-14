@@ -1,7 +1,9 @@
-{% extends 'base.html' %} {% load static %} {% block head %}
+{% extends 'export_lsd/base.html' %} {% load static %}
+{% block title %}{% block list_title %}{% endblock list_title %}{% endblock title %}
+
+{% block head %}
 <link rel="stylesheet" href="{% static 'lib/datatables-1.11.3/css/dataTables.bootstrap5.min.css' %}" />
 <link rel="stylesheet" href="{% static 'lib/datatables-1.11.3/responsive-2.2.9/css/responsive.bootstrap5.min.css' %}" />
-
 {% block head_list %} {% endblock %} {% endblock %}
 {% block content %}
 <div class="card card-primary">

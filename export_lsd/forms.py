@@ -1,6 +1,6 @@
 from django.forms import ModelForm, Textarea, TextInput
 
-from export_lsd.models import Empleado, Empresa
+from export_lsd.models import Empresa, Empleado
 
 
 class EmpresaForm(ModelForm):
@@ -12,7 +12,7 @@ class EmpresaForm(ModelForm):
     class Meta:
         model = Empresa
         fields = '__all__'
-        # exclude = ... si necesitara excluir campos
+        exclude = ['user']
 
         widgets = {
             'name': TextInput(
@@ -20,7 +20,8 @@ class EmpresaForm(ModelForm):
                     'placeholder': "Ingrese el nombre de empresa"
                 }
             ),
-            'cuit': Textarea(
+            'cuit': TextInput
+            (
                 attrs={
                     'placeholder': "Ingrese el número de CUIT"
                 }
@@ -43,18 +44,18 @@ class EmpresaForm(ModelForm):
 class EmpleadoForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['name'].widget.attrs['autofocus'] = True
+        # self.fields['empleado.name'].widget.attrs['autofocus'] = True
 
     class Meta:
         model = Empleado
         fields = '__all__'
         widgets = {
-            'name': TextInput(
+            'empleado.name': TextInput(
                 attrs={
                     'placeholder': 'Ingrese el nombre del empleado',
                 }
             ),
-            'cuil': Textarea(
+            'empleado.cuil': TextInput(
                 attrs={
                     'placeholder': "Ingrese el número de CUIL"
                 }

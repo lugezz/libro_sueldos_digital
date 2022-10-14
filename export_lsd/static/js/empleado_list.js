@@ -18,34 +18,26 @@ $(function () {
         columns: [
             {"data": "leg"},
             {"data": "name"},
-            {"data": "empresa.name"},
-            {"data": "CUIL"},
+            {"data": "empresa"},
+            {"data": "cuil"},
             {"data": "id"},
         ],
         columnDefs: [
             {
-                targets: [-3],
+                targets: [0],
                 class: 'text-center',
-                orderable: false,
-                render: function (data, type, row) {
-                    return '<img src="'+data+'" class="img-fluid d-block mx-auto" style="width: 20px; height: 20px;">';
-                }
             },
             {
-                targets: [-2],
+                targets: [3],
                 class: 'text-center',
-                orderable: false,
-                render: function (data, type, row) {
-                    return '$'+parseFloat(data).toFixed(2);
-                }
             },
             {
                 targets: [-1],
                 class: 'text-center',
                 orderable: false,
                 render: function (data, type, row) {
-                    var buttons = '<a href="/export_lsd/empleado/update/' + row.id + '/" class="btn btn-warning btn-xs btn-flat"><i class="fas fa-edit"></i></a> ';
-                    buttons += '<a href="/export_lsd/empleado/delete/' + row.id + '/" type="button" class="btn btn-danger btn-xs btn-flat"><i class="fas fa-trash-alt"></i></a>';
+                    var buttons = '<a href="/export-lsd/empleado/update/' + row.id + '/" class="btn btn-warning btn-xs btn-flat"><i class="fas fa-edit"></i></a> ';
+                    buttons += '<a href="/export-lsd/empleado/delete/' + row.id + '/" type="button" class="btn btn-danger btn-xs btn-flat"><i class="fas fa-trash-alt"></i></a>';
                     return buttons;
                 }
             },

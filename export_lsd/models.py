@@ -75,26 +75,21 @@ class Empresa(models.Model):
 
 
 class Empleado(models.Model):
+    leg = models.PositiveSmallIntegerField()
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     name = models.CharField(max_length=120, verbose_name='Nombre', null=True, blank=True)
     cuil = models.CharField(max_length=11, validators=[MinLengthValidator(11)])
 
     def __str__(self) -> str:
-        return self.name
-
-
-class EmpresaEmpleado(models.Model):
-    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
-    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
-    leg = models.PositiveSmallIntegerField()
-
-    def __str__(self):
-        return f'{self.empresa} - {self.leg} - {self.empleado}'
+        return f'{self.empresa.name} - Leg.{self.leg}: {self.name}'
 
     def toJSON(self):
         item = model_to_dict(self)
-        item['empresa'] = self.empresa.toJSON()
-        item['empleado'] = self.empleado.toJSON()
+        item['empresa'] = self.empresa.name
         return item
+
+    class Meta:
+        ordering = ['empresa__name', 'leg']
 
 
 class Registro(models.Model):

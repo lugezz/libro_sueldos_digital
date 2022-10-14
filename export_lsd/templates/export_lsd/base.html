@@ -23,7 +23,14 @@
   <link href="{% static 'lib/simple-datatables/style.css' %}" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="{% static 'css/style.css' %}" rel="stylesheet">
-
+  <!-- JQuery -->
+  <script src="{% static 'lib/jquery/jquery-3.6.0.min.js' %}"></script>
+  <!-- Sweet Alert -->
+  <script src="{% static 'lib/sweetalert2-9.10.0/sweetalert2.all.min.js' %}"></script>
+  <!-- Jquery Confirm -->
+  <link rel="stylesheet" href="{% static 'lib/jquery-confirm-v3.3.4/jquery-confirm.min.css' %}">
+  <script src="{% static 'lib/jquery-confirm-v3.3.4/jquery-confirm.min.js' %}"></script>
+  
   <!-- Agregar librerias -->
   {% block head%}{% endblock %}
 
@@ -31,18 +38,16 @@
 
 <body>
 
-  {% include 'header.html' %}
-  {% include 'sidebar.html' %}
+  {% include 'export_lsd/header.html' %}
+  {% include 'export_lsd/sidebar.html' %}
 
   <main id="main" class="main">
     {% block content %}
     {% endblock content %}
   </main><!-- End #main -->
   
-  {% include 'footer.html' %}
+  {% include 'export_lsd/footer.html' %}
 
-  <!-- JQuery -->
-  <script src="{% static 'lib/jquery/jquery-3.6.0.min.js' %}"></script>
   <!-- App Main JS File -->
   <script src="{% static 'js/main.js' %}"></script>
   <!-- Vendor JS Files -->

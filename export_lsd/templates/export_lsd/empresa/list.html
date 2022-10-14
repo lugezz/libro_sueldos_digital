@@ -1,9 +1,11 @@
-{% extends 'export_lsd/list.html' %} {% load static %} {% block head_list %}
+{% extends 'export_lsd/list.html' %} {% load static %}
+{% block list_title %} Lista de Empresas{% endblock %}
+{% block head_list %}
 {% endblock %} {% block columns %}
-<tr>
+<tr class="text-center">
     <th scope="col" style="width: 10%;">Id</th>
-    <th scope="col" style="width: 20%;">Nombre</th>
-    <th scope="col" style="width: 50%;">CUIT</th>
+    <th scope="col" style="width: 50%;">Nombre</th>
+    <th scope="col" style="width: 20%;">CUIT</th>
     <th scope="col" style="width: 20%;">Opciones</th>
 </tr>
 {% endblock %} {% block rows %} {% endblock %}
