@@ -6,9 +6,9 @@ El objetivo es simplificar el proceso para generar el txt exportador para LSD de
 El código es abierto para todos.
 
 
-### Puntos a considerar
+## Puntos a considerar
 
-# Exportación Básica
+### Exportación Básica
 
 _Legajos predeterminado por orden, o sea 1, 2, 3, etc. No configurable por el momento_
 
@@ -22,6 +22,6 @@ _Pendiente tratar análisis sobre el tope_
 
 _Eventuales: Pendiente fecha de ingreso y de egreso_
 
-# Exportación Avanzada
+### Exportación Avanzada
 
 _Pendiente configuración de inclusión de CBU_
