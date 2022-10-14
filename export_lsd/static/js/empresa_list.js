@@ -18,8 +18,8 @@ $(function() {
         columns: [
             { "data": "id" },
             { "data": "name" },
-            { "data": "CUIT" },
-            { "data": "CUIT" },
+            { "data": "cuit" },
+            { "data": "cuit" },
         ],
         columnDefs: [{
             targets: [-1],

@@ -5,7 +5,7 @@
 
       <li class="nav-item">
         <a class="nav-link " href="{% url 'export_lsd:home' %}">
-          <i class="bi bi-grid"></i>
+          <i class="fas fa-th"></i>
           <span>Panel de Control</span>
         </a>
       </li><!-- End Dashboard Nav -->
@@ -13,19 +13,19 @@
       <!-- Configuraciones Nav -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-wrench"></i>
+          <i class="fas fa-toolbox"></i>
           <span>Configuraciones</span>
-          <i class="bi bi-chevron-down ms-auto"></i>
+          <i class="fas fa-chevron-down fa-sm mx-2"></i>
         </a>
         <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="components-alerts.html">
-              <i class="bi bi-circle"></i><span>Empresas</span>
+            <a href="{% url 'export_lsd:empresa_list' %}">
+              <i class="far fa-circle"></i></i><span>Empresas</span>
             </a>
           </li>
           <li>
-            <a href="components-accordion.html">
-              <i class="bi bi-circle"></i><span>Empleados</span>
+            <a href="{% url 'export_lsd:empleado_list' %}">
+              <i class="far fa-circle"></i><span>Empleados</span>
             </a>
           </li>
         </ul>
@@ -34,17 +34,18 @@
       <!-- Exportaciones Nav -->
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-arrow-left-right"></i><span>Exportaciones</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="fas fa-file-export"></i><span>Exportaciones</span>
+          <i class="fas fa-chevron-down fa-sm mx-2"></i>
         </a>
         <ul id="forms-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
             <a href="forms-elements.html">
-              <i class="bi bi-circle"></i><span>Exportación Básica</span>
+              <i class="far fa-circle"></i></i><span>Exportación Básica</span>
             </a>
           </li>
           <li>
             <a href="forms-layouts.html">
-              <i class="bi bi-circle"></i><span>Exportación Avanzada</span>
+              <i class="far fa-circle"></i></i><span>Exportación Avanzada</span>
             </a>
           </li>
         </ul>
@@ -54,21 +55,21 @@
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="users-profile.html">
-          <i class="bi bi-clock-history"></i>
+          <i class="fas fa-history"></i>
           <span>Historial</span>
         </a>
       </li><!-- End Profile Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="pages-faq.html">
-          <i class="bi bi-question-circle"></i>
+          <i class="fas fa-question"></i>
           <span>Preguntas Frecuentes</span>
         </a>
       </li><!-- End F.A.Q Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="pages-contact.html">
-          <i class="bi bi-envelope"></i>
+          <i class="fas fa-envelope"></i>
           <span>Contacto</span>
         </a>
       </li><!-- End Contact Page Nav -->

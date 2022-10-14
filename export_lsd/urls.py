@@ -21,7 +21,7 @@ urlpatterns = [
     path('empresa/form/', EmpresaFormView.as_view(), name='category_form'),
 
     # Empleados
-    path('empleado/list/', EmpleadoListView.as_view(), name='empleado_list'),
+    path('empleado/', EmpleadoListView.as_view(), name='empleado_list'),
     path('empleado/add/', EmpleadoCreateView.as_view(), name='empleado_create'),
     path('empleado/update/<int:pk>/', EmpleadoUpdateView.as_view(), name='empleado_update'),
     path('empleado/delete/<int:pk>/', EmpleadoDeleteView.as_view(), name='empleado_delete'),
