@@ -2,7 +2,7 @@
 {% block title %} Exportador Básico {% endblock title%}
 {% block content %}
 
-    <form method="post" enctype="multipart/form-data">  
+    <form method="post" enctype="multipart/form-data" class="mb-3">  
         {% csrf_token %}  
         <input type="file" name="xlsfile">  
         <button type="submit">Subir</button>  
@@ -12,45 +12,38 @@
     <div class="container my-3">
         <div class="row">
             <div class="col-8">
-                {% if resultados %}
                 <div class="card top-selling overflow-auto">
-
                     <div class="card-body pb-0">
-                    <h5 class="card-title">Últimas presentaciones</h5>
-
-                    <table class="table table-borderless">
+                    <h5 class="card-title text-center">Resultados de Exportación</h5>
+                    <table class="table">
                         <thead>
                         <tr>
-                            <th scope="col">Id</th>
-                            <th scope="col">Fecha</th>
-                            <th scope="col">Empresa</th>
-                            <th scope="col">Cant. Liquid.</th>
-                            <th scope="col">Empleados</th>
+                            <th scope="col" style="width: 20%">CUIT</th>
+                            <th scope="col" style="width: 10%">Leg</th>
+                            <th scope="col" style="width: 50%">Nombre</th>
+                            <th scope="col" style="width: 20%">CUIL</th>
                         </tr>
                         </thead>
                         <tbody>
+                            {% if resultados %}
                         <tr>
                             <td><a href="#" class="text-primary fw-bold">10</a></td>
                             <td>13/10/2022</td>
                             <td>Que lo que SRL</td>
                             <td>4</td>
-                            <td>124</td>
                         </tr>
                         <tr>
                             <td><a href="#" class="text-primary fw-bold">10</a></td>
                             <td>13/10/2022</td>
                             <td>Que lo que SRL</td>
                             <td>4</td>
-                            <td>124</td>
                         </tr>
+                        {% endif %}
                         </tbody>
                     </table>
-
                     </div>
-
                 </div>
             </div><!-- End Resultados ok -->
-            {% endif %}
 
             <!-- Resultados incorrectos -->
             <div class="col-4"> 

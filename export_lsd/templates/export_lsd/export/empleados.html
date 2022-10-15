@@ -1,0 +1,98 @@
+{% extends "export_lsd/base.html" %}
+{% block title %} Exportador Básico {% endblock title%}
+{% block content %}
+
+    <form method="post" enctype="multipart/form-data" class="mb-3">  
+        {% csrf_token %}
+        <input type="file" name="xlsfile">  
+        <button type="submit" class="button_submit">Subir</button>  
+    </form>
+
+    <!-- Resultados correctos -->
+    <div class="container my-3">
+        <div class="row">
+            <div class="col-7">
+                <div class="card top-selling overflow-auto">
+                    <div class="card-body pb-0">
+                    <h5 class="card-title text-center">Resultados de Exportación</h5>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th class="text-center" scope="col" style="width: 20%">CUIT</th>
+                            <th class="text-center" scope="col" style="width: 10%">Leg</th>
+                            <th class="text-center" scope="col" style="width: 50%">Nombre</th>
+                            <th class="text-center" scope="col" style="width: 20%">CUIL</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            {% if results %}
+                                {% for result in results %}
+                                <tr>
+                                    {% for item in result %}
+                                    <td class='text-center'>{{ item }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% if results %}
+                    <div class="container my-3 text-center">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="all_data" value="{{ results }} ">
+                            <button class="btn btn-primary btn-flat btnTest">
+                                <i class="fa-solid fa-file-import"></i> Confirmar Importación
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div><!-- End Resultados ok -->
+
+            <!-- Resultados incorrectos -->
+            <div class="col-5"> 
+                {% if invalid_data %}
+                <div class="card top-selling overflow-auto">
+                    <h5 class="card-title text-center">Errores de Exportación</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for data in invalid_data %}
+                            <li class="list-group-item text-center text-info"><small>{{ data }}</small></li>
+                            {% endfor %}
+                        </ul>
+                </div>
+                {% endif %}
+            </div><!-- Resultados incorrectos -->
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block footer_js %}
+    <script>
+        {% if error %}
+            var errors = '';
+            errors = '{{ error }}';
+            Swal.fire({
+                title: 'Error!',
+                text: errors,
+                icon: 'error'
+            });
+        {% endif %}
+
+    $(document).ready(
+    function(){
+        $('.button_submit').attr('disabled',true);
+        $('input:file').change(
+            function(){
+                if ($(this).val()){
+                    $('.button_submit').removeAttr('disabled'); 
+                }
+                else {
+                    $('.button_submit').attr('disabled',true);
+                }
+            });
+    });
+    </script>
+{% endblock %}

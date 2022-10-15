@@ -23,7 +23,8 @@ class EmpresaForm(ModelForm):
             'cuit': TextInput
             (
                 attrs={
-                    'placeholder': "Ingrese el número de CUIT"
+                    'placeholder': "Ingrese el número de CUIT",
+                    'maxlength': 15,
                 }
             )
         }

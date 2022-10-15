@@ -1,8 +1,6 @@
 import datetime
-from tablib import Dataset
-from tablib.exceptions import UnsupportedFormat
 
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http.response import JsonResponse
 from django.urls import reverse_lazy
@@ -11,7 +9,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, Empleado, Empresa, Registro
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
-from export_lsd.resources import EmpleadoResource
+from export_lsd.tools.import_empleados import get_employees
 
 
 # ------------- DASHBOARD ------------------------------------------------
@@ -186,6 +184,7 @@ class EmpleadoListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Listado de Empleados'
         context['create_url'] = reverse_lazy('export_lsd:empleado_create')
+        context['import_url'] = reverse_lazy('export_lsd:import_empleados')
         context['list_url'] = reverse_lazy('export_lsd:empleado_list')
         context['entity'] = 'Empleados'
         return context
@@ -281,31 +280,31 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
 
 # ------------- EXPORT ------------------------------------------------
 def basic_export(request):
-    context = {
+    pass
+
+
+def import_empleados(request):
+    result = {
         'error': '',
-        'results': ''
+        'results': '',
+        'invalid_data': '',
     }
 
     if request.method == 'POST':
-        persona_resource = EmpleadoResource()
-        dataset = Dataset()
-        print(dataset)
-        nuevos_empleados = request.FILES['xlsfile']
-        print(nuevos_empleados)
-        try:
-            imported_data = dataset.load(nuevos_empleados.read())
-            print(imported_data)
-        except UnsupportedFormat:
-            context['error'] = "Formato de archivo incorrecto"
-        except Exception as err:
-            context['error'] = f"Unexpected {err=}, {type(err)=}"
+        if 'all_data' in request.POST:
+            # TODO: Go ahead and Import
+            print(request.POST.get('all_data'))
 
-        # Test the data import  #print(result.has_errors())
-        result = persona_resource.import_data(dataset, dry_run=True)
-        if not result.has_errors():
-            print(result)
+            return redirect(reverse_lazy('export_lsd:empleado_list'))
+        else:
+            try:
+                result = get_employees(request.FILES['xlsfile'])
+            except ValueError:
+                result['error'] = "Formato de archivo incorrecto"
+            except Exception as err:
+                result['error'] = type(err)
 
-    return render(request, 'export_lsd/export/basic.html', context)
+    return render(request, 'export_lsd/export/empleados.html', result)
 
 
 def advanced_export(request):
