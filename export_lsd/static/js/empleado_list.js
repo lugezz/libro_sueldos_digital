@@ -24,11 +24,7 @@ $(function () {
         ],
         columnDefs: [
             {
-                targets: [0],
-                class: 'text-center',
-            },
-            {
-                targets: [3],
+                targets: [0, 3],
                 class: 'text-center',
             },
             {

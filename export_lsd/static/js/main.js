@@ -35,6 +35,7 @@ function message_error(obj) {
 
 
 function submit_with_ajax(url, title, content, parameters, callback, csrf_token) {
+  console.log(parameters)
   $.confirm({
       theme: 'material',
       title: title,

@@ -2,7 +2,7 @@ from django.urls import path
 
 from export_lsd.export_db import exportaDB, exportaDB_f931
 from export_lsd.export_basic_txt import export_txt
-from export_lsd.views import (advanced_export, HomeView,
+from export_lsd.views import (advanced_export, basic_export, HomeView,
                               ConfigEBCreateView, ConfigEBDeleteView, ConfigEBListView,
                               ConfigEBUpdateView,
                               EmpleadoCreateView, EmpleadoDeleteView, EmpleadoListView,
@@ -35,6 +35,7 @@ urlpatterns = [
     path('config-eb/delete/<int:pk>/', ConfigEBDeleteView.as_view(), name='config_eb_delete'),
 
     # Accesos
+    path('basic/', basic_export, name='basic'),
     path('advanced/', advanced_export, name='advanced'),
     path('exportadb/', exportaDB),
     path('exportadb-f931/', exportaDB_f931),

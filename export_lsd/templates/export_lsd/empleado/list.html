@@ -14,6 +14,13 @@
     </tr>
 {% endblock %}
 
+{% block buttons_list %}
+    <a href="{{ export_url }}" class="btn btn-primary btn-flat btnTest">
+        <i class="fa-solid fa-file-import"></i> Importar
+    </a>
+    <a href="{% static 'other/Import empleados.xlsx' %}"> <small class="text-muted">Descargar modelo</a>
+{% endblock %}
+
 {% block javascript %}
     <script src="{% static 'js/empleado_list.js' %}"></script>
 {% endblock %}

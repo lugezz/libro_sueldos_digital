@@ -1,4 +1,6 @@
 import datetime
+from tablib import Dataset
+from tablib.exceptions import UnsupportedFormat
 
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,7 +10,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, Empleado, Empresa, Registro
-from export_lsd.forms import EmpresaForm, EmpleadoForm
+from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
+from export_lsd.resources import EmpleadoResource
 
 
 # ------------- DASHBOARD ------------------------------------------------
@@ -28,15 +31,6 @@ class HomeView(TemplateView):
         context['listado'] = last_month_str
 
         return context
-
-
-def advanced_export(request):
-
-    context = {
-        'title': 'Exportación Avanzada',
-    }
-
-    return render(request, 'export_lsd/advanced.html', context)
 
 
 # ------------- EMPRESAS ------------------------------------------------
@@ -286,8 +280,41 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
 
 
 # ------------- EXPORT ------------------------------------------------
-def export_basic(request):
-    pass
+def basic_export(request):
+    context = {
+        'error': '',
+        'results': ''
+    }
+
+    if request.method == 'POST':
+        persona_resource = EmpleadoResource()
+        dataset = Dataset()
+        print(dataset)
+        nuevos_empleados = request.FILES['xlsfile']
+        print(nuevos_empleados)
+        try:
+            imported_data = dataset.load(nuevos_empleados.read())
+            print(imported_data)
+        except UnsupportedFormat:
+            context['error'] = "Formato de archivo incorrecto"
+        except Exception as err:
+            context['error'] = f"Unexpected {err=}, {type(err)=}"
+
+        # Test the data import  #print(result.has_errors())
+        result = persona_resource.import_data(dataset, dry_run=True)
+        if not result.has_errors():
+            print(result)
+
+    return render(request, 'export_lsd/export/basic.html', context)
+
+
+def advanced_export(request):
+
+    context = {
+        'title': 'Exportación Avanzada',
+    }
+
+    return render(request, 'export_lsd/advanced.html', context)
 
 
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------
@@ -324,7 +351,7 @@ class ConfigEBListView(LoginRequiredMixin, ListView):
 
 class ConfigEBCreateView(LoginRequiredMixin, CreateView):
     model = BasicExportConfig
-    form_class = EmpresaForm
+    form_class = ConfigEBForm
     template_name = 'export_lsd/config-eb/create.html'
     success_url = reverse_lazy('export_lsd:config_eb_list')
     login_url = '/login/'
@@ -337,7 +364,7 @@ class ConfigEBCreateView(LoginRequiredMixin, CreateView):
         try:
             action = request.POST['action']
             if action == 'add':
-                form = self.get_form()  # Es lo mismo que escribir form = EmpresaForm(request.POST)
+                form = self.get_form()
                 data = form.save()
             else:
                 data['error'] = 'No ha ingresado a ninguna opción'
@@ -349,18 +376,18 @@ class ConfigEBCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Agregar Empresa'
-        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
-        context['entity'] = 'Empresas'
+        context['title'] = 'Agregar Configuración'
+        context['list_url'] = reverse_lazy('export_lsd:config_eb_list')
+        context['entity'] = 'ConfigEB'
         context['action'] = 'add'
         return context
 
 
 class ConfigEBUpdateView(LoginRequiredMixin, UpdateView):
-    model = Empresa
-    form_class = EmpresaForm
-    template_name = 'export_lsd/empresa/create.html'
-    success_url = reverse_lazy('export_lsd:empresa_list')
+    model = BasicExportConfig
+    form_class = ConfigEBForm
+    template_name = 'export_lsd/config-eb/create.html'
+    success_url = reverse_lazy('export_lsd:config_eb_list')
     login_url = '/login/'
 
     def dispatch(self, request, *args, **kwargs):
@@ -372,7 +399,7 @@ class ConfigEBUpdateView(LoginRequiredMixin, UpdateView):
         try:
             action = request.POST['action']
             if action == 'edit':
-                form = self.get_form()  # Es lo mismo que escribir form = EmpresaForm(request.POST)
+                form = self.get_form()
                 data = form.save()
             else:
                 data['error'] = 'No ha ingresado a ninguna opción'
@@ -384,18 +411,18 @@ class ConfigEBUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Edición de Empresa'
-        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
-        context['entity'] = 'Empresas'
+        context['title'] = 'Edición de Configuración'
+        context['list_url'] = reverse_lazy('export_lsd:config_eb_list')
+        context['entity'] = 'ConfigEB'
         context['action'] = 'edit'
         return context
 
 
 class ConfigEBDeleteView(LoginRequiredMixin, DeleteView):
-    model = Empresa
-    form_class = EmpresaForm
-    template_name = 'export_lsd/empresa/delete.html'
-    success_url = reverse_lazy('export_lsd:empresa_list')
+    model = BasicExportConfig
+    form_class = ConfigEBForm
+    template_name = 'export_lsd/config-eb/delete.html'
+    success_url = reverse_lazy('export_lsd:config_eb_list')
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -412,7 +439,7 @@ class ConfigEBDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Eliminar Empresa'
-        context['list_url'] = reverse_lazy('export_lsd:empresa_list')
-        context['entity'] = 'Empresas'
+        context['title'] = 'Eliminar Configuración'
+        context['list_url'] = reverse_lazy('export_lsd:config_eb_list')
+        context['entity'] = 'ConfigEB'
         return context

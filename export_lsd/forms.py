@@ -1,6 +1,6 @@
-from django.forms import ModelForm, Textarea, TextInput
+from django.forms import ModelForm, TextInput
 
-from export_lsd.models import Empresa, Empleado
+from export_lsd.models import BasicExportConfig, Empresa, Empleado
 
 
 class EmpresaForm(ModelForm):
@@ -61,6 +61,25 @@ class EmpleadoForm(ModelForm):
                 }
             )
         }
+
+    def save(self, commit=True):
+        data = {}
+        form = super()
+        try:
+            if form.is_valid():
+                form.save()
+            else:
+                data['error'] = form.errors
+        except Exception as e:
+            data['error'] = str(e)
+        return data
+
+
+class ConfigEBForm(ModelForm):
+    class Meta:
+        model = BasicExportConfig
+        fields = '__all__'
+        exclude = ['user']
 
     def save(self, commit=True):
         data = {}

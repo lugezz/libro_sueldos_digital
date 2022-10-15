@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     # Third party apps
     'widget_tweaks',
+    'import_export',
 
     # Own apps
     'export_lsd',

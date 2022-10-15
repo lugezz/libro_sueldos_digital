@@ -16,8 +16,7 @@ $(function() {
             dataSrc: ""
         },
         columns: [
-            { "data": "id" },
-            { "data": "forma_pago" },
+            { "data": "name" },
             { "data": "ccn_sueldo" },
             { "data": "ccn_no_rem" },
             { "data": "ccn_sijp" },
@@ -28,10 +27,10 @@ $(function() {
         columnDefs: [
             {
                 targets: [0],
-                class: 'text-center',
+                class: 'text-left',
             },
             {
-                targets: [2],
+                targets: '_all',
                 class: 'text-center',
             },
             {
@@ -39,8 +38,8 @@ $(function() {
             class: 'text-center',
             orderable: false,
             render: function(data, type, row) {
-                var buttons = '<a href="/export-lsd/config-db/update/' + row.id + '/" class="btn btn-warning btn-xs btn-flat"><i class="fas fa-edit"></i></a> ';
-                buttons += '<a href="/export-lsd/config-db/delete/' + row.id + '/" type="button" class="btn btn-danger btn-xs btn-flat"><i class="fas fa-trash-alt"></i></a>';
+                var buttons = '<a href="/export-lsd/config-eb/update/' + row.id + '/" class="btn btn-warning btn-xs btn-flat"><i class="fas fa-edit"></i></a> ';
+                buttons += '<a href="/export-lsd/config-eb/delete/' + row.id + '/" type="button" class="btn btn-danger btn-xs btn-flat"><i class="fas fa-trash-alt"></i></a>';
                 return buttons;
             }
             },

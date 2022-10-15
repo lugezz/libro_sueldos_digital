@@ -2,5 +2,81 @@
 {% block title %} Exportador Básico {% endblock title%}
 {% block content %}
 
+    <form method="post" enctype="multipart/form-data">  
+        {% csrf_token %}  
+        <input type="file" name="xlsfile">  
+        <button type="submit">Subir</button>  
+    </form>  
+
+    <!-- Resultados correctos -->
+    <div class="container my-3">
+        <div class="row">
+            <div class="col-8">
+                {% if resultados %}
+                <div class="card top-selling overflow-auto">
+
+                    <div class="card-body pb-0">
+                    <h5 class="card-title">Últimas presentaciones</h5>
+
+                    <table class="table table-borderless">
+                        <thead>
+                        <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Empresa</th>
+                            <th scope="col">Cant. Liquid.</th>
+                            <th scope="col">Empleados</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td><a href="#" class="text-primary fw-bold">10</a></td>
+                            <td>13/10/2022</td>
+                            <td>Que lo que SRL</td>
+                            <td>4</td>
+                            <td>124</td>
+                        </tr>
+                        <tr>
+                            <td><a href="#" class="text-primary fw-bold">10</a></td>
+                            <td>13/10/2022</td>
+                            <td>Que lo que SRL</td>
+                            <td>4</td>
+                            <td>124</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    </div>
+
+                </div>
+            </div><!-- End Resultados ok -->
+            {% endif %}
+
+            <!-- Resultados incorrectos -->
+            <div class="col-4"> 
+                {% if resultados_incorrectos %}
+                <div class="card top-selling overflow-auto">
+                    <div class="card-body pb-0">
+                        Ver
+                    </div>
+                </div>
+                {% endif %}
+            </div><!-- Resultados incorrectos -->
+        </div>
+    </div>
 
 {% endblock content %}
+
+{% block footer_js %}
+    <script>
+        {% if error %}
+            var errors = '';
+            errors = '{{ error }}';
+            Swal.fire({
+                title: 'Error!',
+                text: errors,
+                icon: 'error'
+            });
+        {% endif %}
+    </script>
+{% endblock %}
