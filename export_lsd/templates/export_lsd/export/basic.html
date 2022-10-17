@@ -4,65 +4,22 @@
 
     <form method="post" enctype="multipart/form-data" class="mb-3">  
         {% csrf_token %}
-        <div class="container">
-            <p>Seleccione el archivo de exportación</p>
-            <div class="input-group mb-3" style="width: 58.33%;">
-                <input class="form-control" type="file" id="formFile" name="xlsfile" width="50%">
-                <button type="submit" class="button_submit input-group-text">Subir</button>
-            </div>
-            <div class="dropdown-menu">
-                <a class="dropdown-item" href="#">Action</a>
-                <a class="dropdown-item" href="#">Another action</a>
-                <a class="dropdown-item" href="#">Something else here</a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">Separated link</a>
-              </div>
-        </div>
+        <p class="mb-1">Seleccione configuración de Exportación Básica</p>
+        <select class="form-select mb-3" aria-label="Seleccione Configuración Exportación">
+            {% for item in basic_export_config %}
+                <option value="{{ item.name }}">{{ item.name }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Seleccione el txt tradicional para exportación de F.931</p>
+        <input class="form-control mb-3" type="file" id="formFile" name="txtfile">
+
+        {% comment %} TODO: Process file {% endcomment %}
+        <a href="#" class="btn btn-primary btn-flat my-3">
+            <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
+        </a>
+
     </form>
-
-    <!-- Resultados correctos -->
-    <div class="container my-3">
-        <div class="row">
-            <div class="col-7">
-                <div class="card top-selling overflow-auto">
-                    <div class="card-body pb-0">
-                    <h5 class="card-title text-center">Resultados de Exportación</h5>
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th class="text-center" scope="col" style="width: 20%">CUIT</th>
-                            <th class="text-center" scope="col" style="width: 10%">Leg</th>
-                            <th class="text-center" scope="col" style="width: 50%">Nombre</th>
-                            <th class="text-center" scope="col" style="width: 20%">CUIL</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                            {% if results %}
-                                {% for result in results %}
-                                <tr>
-                                    {% for item in result %}
-                                    <td class='text-center'>{{ item }}</td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                        {% endif %}
-                        </tbody>
-                    </table>
-                    </div>
-                    {% if results %}
-                    <div class="container my-3 text-center">
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <input type="hidden" name="has_confirmation" value="Yes">
-                            <button class="btn btn-primary btn-flat btnTest">
-                                <i class="fa-solid fa-file-import"></i> Confirmar Importación
-                            </button>
-                        </form>
-                    </div>
-                    {% endif %}
-                </div>
-            </div><!-- Resument de configuración básica -->
-
 
 {% endblock content %}
 
