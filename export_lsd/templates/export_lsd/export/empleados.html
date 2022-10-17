@@ -1,11 +1,16 @@
 {% extends "export_lsd/base.html" %}
-{% block title %} Exportador Básico {% endblock title%}
+{% block title %} Importador Empleados {% endblock title%}
 {% block content %}
 
     <form method="post" enctype="multipart/form-data" class="mb-3">  
         {% csrf_token %}
-        <input type="file" name="xlsfile">  
-        <button type="submit" class="button_submit">Subir</button>  
+        <div class="container">
+            <p>Seleccione el archivo de exportación</p>
+            <div class="input-group mb-3" style="width: 58.33%;">
+                <input class="form-control" type="file" id="formFile" name="xlsfile" width="50%">
+                <button type="submit" class="button_submit input-group-text">Subir</button>
+            </div>
+        </div>
     </form>
 
     <!-- Resultados correctos -->
@@ -41,7 +46,7 @@
                     <div class="container my-3 text-center">
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
-                            <input type="hidden" name="all_data" value="{{ results }} ">
+                            <input type="hidden" name="has_confirmation" value="Yes">
                             <button class="btn btn-primary btn-flat btnTest">
                                 <i class="fa-solid fa-file-import"></i> Confirmar Importación
                             </button>

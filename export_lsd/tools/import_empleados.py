@@ -36,16 +36,19 @@ def get_employees(file_import: Path) -> dict:
             continue
 
         if not is_positive_number(str(row['Leg'])):
-            employees_dict['invalid_data'].append(f"Línea: {index} - Leg {row['Leg']} Inválido")
+            employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} Inválido")
             continue
 
         # TODO: Ver si conviene pisar
         if get_empleado_name(str(row['CUIT']), str(row['Leg'])):
-            employees_dict['invalid_data'].append(f"Línea: {index} - Leg.{row['Leg']} - CUIT {row['CUIT']} ya existe")
+            employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} - CUIT {row['CUIT']} ya existe")
             continue
 
         # Todo ok aquí
         employees_dict['results'].add((row['CUIT'], row['Leg'], row['Nombre'], row['CUIL']))
+
+    # Results as list to make it JSON seriazable
+    employees_dict['results'] = list(employees_dict['results'])
 
     return employees_dict
 

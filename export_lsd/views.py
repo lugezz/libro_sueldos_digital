@@ -1,13 +1,14 @@
 import datetime
 
 from django.shortcuts import redirect, render
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http.response import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
-from export_lsd.models import BasicExportConfig, Empleado, Empresa, Registro
+from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Registro
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
 from export_lsd.tools.import_empleados import get_employees
 
@@ -280,7 +281,17 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
 
 # ------------- EXPORT ------------------------------------------------
 def basic_export(request):
-    pass
+    basic_export_config_qs = BasicExportConfig.objects.filter(user=request.user)
+
+    if not basic_export_config_qs:
+        messages.error(request, "Debe crear al menos un modelo de configuración de Exportación Básica")
+        return redirect(reverse_lazy('export_lsd:config_eb_list'))
+
+    context = {
+        'basic_export_config': basic_export_config_qs
+    }
+
+    return render(request, 'export_lsd/export/basic.html', context)
 
 
 def import_empleados(request):
@@ -291,9 +302,16 @@ def import_empleados(request):
     }
 
     if request.method == 'POST':
-        if 'all_data' in request.POST:
-            # TODO: Go ahead and Import
-            print(request.POST.get('all_data'))
+        # Confirmation button
+        if request.POST.get('has_confirmation') == 'Yes':
+            data = request.session['all_data']
+            bulk_mgr = BulkCreateManager()
+            for item in data:
+                print(item[0])
+                print(item)
+                empresa = Empresa.objects.get(cuit=item[0])
+                bulk_mgr.add(Empleado(empresa=empresa, leg=item[1], name=item[2], cuil=item[3]))
+            bulk_mgr.done()
 
             return redirect(reverse_lazy('export_lsd:empleado_list'))
         else:
@@ -303,6 +321,8 @@ def import_empleados(request):
                 result['error'] = "Formato de archivo incorrecto"
             except Exception as err:
                 result['error'] = type(err)
+
+            request.session['all_data'] = result['results']
 
     return render(request, 'export_lsd/export/empleados.html', result)
 

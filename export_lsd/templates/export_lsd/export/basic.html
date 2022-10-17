@@ -3,60 +3,66 @@
 {% block content %}
 
     <form method="post" enctype="multipart/form-data" class="mb-3">  
-        {% csrf_token %}  
-        <input type="file" name="xlsfile">  
-        <button type="submit">Subir</button>  
-    </form>  
+        {% csrf_token %}
+        <div class="container">
+            <p>Seleccione el archivo de exportación</p>
+            <div class="input-group mb-3" style="width: 58.33%;">
+                <input class="form-control" type="file" id="formFile" name="xlsfile" width="50%">
+                <button type="submit" class="button_submit input-group-text">Subir</button>
+            </div>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#">Action</a>
+                <a class="dropdown-item" href="#">Another action</a>
+                <a class="dropdown-item" href="#">Something else here</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Separated link</a>
+              </div>
+        </div>
+    </form>
 
     <!-- Resultados correctos -->
     <div class="container my-3">
         <div class="row">
-            <div class="col-8">
+            <div class="col-7">
                 <div class="card top-selling overflow-auto">
                     <div class="card-body pb-0">
                     <h5 class="card-title text-center">Resultados de Exportación</h5>
                     <table class="table">
                         <thead>
                         <tr>
-                            <th scope="col" style="width: 20%">CUIT</th>
-                            <th scope="col" style="width: 10%">Leg</th>
-                            <th scope="col" style="width: 50%">Nombre</th>
-                            <th scope="col" style="width: 20%">CUIL</th>
+                            <th class="text-center" scope="col" style="width: 20%">CUIT</th>
+                            <th class="text-center" scope="col" style="width: 10%">Leg</th>
+                            <th class="text-center" scope="col" style="width: 50%">Nombre</th>
+                            <th class="text-center" scope="col" style="width: 20%">CUIL</th>
                         </tr>
                         </thead>
                         <tbody>
-                            {% if resultados %}
-                        <tr>
-                            <td><a href="#" class="text-primary fw-bold">10</a></td>
-                            <td>13/10/2022</td>
-                            <td>Que lo que SRL</td>
-                            <td>4</td>
-                        </tr>
-                        <tr>
-                            <td><a href="#" class="text-primary fw-bold">10</a></td>
-                            <td>13/10/2022</td>
-                            <td>Que lo que SRL</td>
-                            <td>4</td>
-                        </tr>
+                            {% if results %}
+                                {% for result in results %}
+                                <tr>
+                                    {% for item in result %}
+                                    <td class='text-center'>{{ item }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
                         {% endif %}
                         </tbody>
                     </table>
                     </div>
-                </div>
-            </div><!-- End Resultados ok -->
-
-            <!-- Resultados incorrectos -->
-            <div class="col-4"> 
-                {% if resultados_incorrectos %}
-                <div class="card top-selling overflow-auto">
-                    <div class="card-body pb-0">
-                        Ver
+                    {% if results %}
+                    <div class="container my-3 text-center">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="has_confirmation" value="Yes">
+                            <button class="btn btn-primary btn-flat btnTest">
+                                <i class="fa-solid fa-file-import"></i> Confirmar Importación
+                            </button>
+                        </form>
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div><!-- Resultados incorrectos -->
-        </div>
-    </div>
+            </div><!-- Resument de configuración básica -->
+
 
 {% endblock content %}
 
@@ -71,5 +77,4 @@
                 icon: 'error'
             });
         {% endif %}
-    </script>
 {% endblock %}

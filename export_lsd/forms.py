@@ -1,9 +1,21 @@
-from django.forms import ModelForm, TextInput
+from django.forms import Field, ModelForm, TextInput, ValidationError
 
 from export_lsd.models import BasicExportConfig, Empresa, Empleado
+from export_lsd.tools.import_empleados import is_positive_number
+
+
+class CuitCuilField(Field):
+    def validate(self, value):
+        """Check if value consists 11 numeric positive values"""
+        # Use the parent's handling of required fields, etc.
+        super().validate(value)
+        if not is_positive_number(str(value)) or len(str(value)) != 11:
+            raise ValidationError("Ingrese un valor numerico de 11 dígitos")
 
 
 class EmpresaForm(ModelForm):
+    cuit = CuitCuilField()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -43,6 +55,8 @@ class EmpresaForm(ModelForm):
 
 
 class EmpleadoForm(ModelForm):
+    cuil = CuitCuilField()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.fields['empleado.name'].widget.attrs['autofocus'] = True
