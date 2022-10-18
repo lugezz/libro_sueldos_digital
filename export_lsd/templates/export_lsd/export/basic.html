@@ -2,36 +2,94 @@
 {% block title %} Exportador Básico {% endblock title%}
 {% block content %}
 
-    <form method="post" enctype="multipart/form-data" class="mb-3">  
-        {% csrf_token %}
-        <p class="mb-1">Seleccione configuración de Exportación Básica</p>
-        <select class="form-select mb-3" aria-label="Seleccione Configuración Exportación">
-            {% for item in basic_export_config %}
-                <option value="{{ item.name }}">{{ item.name }}</option>
-            {% endfor %}
-        </select>
+<div class="container my-3">
+    <div class="row">
+        <div class="col-8">
+            <form method="post" enctype="multipart/form-data" class="mb-3">  
+                {% csrf_token %}
+                <p class="mb-1">Seleccione configuración de Exportación Básica</p>
+                <select
+                    id="selectBasicConfig"
+                    class="form-select mb-3"
+                    aria-label="Seleccione Configuración Exportación"
+                    onchange="listBasicConfig();"
+                >
+                    {% for item in basic_export_config %}
+                        <option
+                            value="{{ item }}"
+                        >
+                            {{ item.name }}
+                        </option>
+                    {% endfor %}
+                </select>
 
-        <p>Seleccione el txt tradicional para exportación de F.931</p>
-        <input class="form-control mb-3" type="file" id="formFile" name="txtfile">
+                <p>Seleccione el txt tradicional para exportación de F.931</p>
+                <input class="form-control mb-3" type="file" id="formFile" name="txtfile">
 
-        {% comment %} TODO: Process file {% endcomment %}
-        <a href="#" class="btn btn-primary btn-flat my-3">
-            <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
-        </a>
+                {% comment %} TODO: Process file {% endcomment %}
+                <a href="#" class="btn btn-primary btn-flat my-3">
+                    <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
+                </a>
 
-    </form>
+            </form>
+        </div>
 
+        <!-- Export Config Detailed  -->
+        <div class="col-4"> 
+            <div class="card top-selling overflow-auto">
+                <h5 id="configTitle" class="card-title text-center mb-0">Detalle configuración</h5>
+                <ul id="basicExportConfigList"></ul>
+            </div>
+        </div>
+    </div>
 {% endblock content %}
 
 {% block footer_js %}
     <script>
-        {% if error %}
-            var errors = '';
-            errors = '{{ error }}';
-            Swal.fire({
-                title: 'Error!',
-                text: errors,
-                icon: 'error'
-            });
-        {% endif %}
+
+    function listBasicConfig() {
+        let list = document.getElementById("basicExportConfigList");
+        const configOptions = document.getElementById("selectBasicConfig");
+        
+        const thisConfig = configOptions.options[configOptions.selectedIndex].value;
+        const thisConfig2 = thisConfig.replaceAll("'", '"').replaceAll('None', 'null');
+        const thisConfigJson = $.parseJSON(thisConfig2);
+        
+        console.log(thisConfigJson);
+        $("#basicExportConfigList").empty()
+        $("#configTitle").text("Configuración: " + thisConfigJson['name'])
+
+
+        item_ind = 0
+        $.each(thisConfigJson, function(i, val) {
+
+            if (item_ind > 2) {
+                let li = document.createElement("li");
+                li.innerHTML = "<small><b>"+ i + "</b>" + ": " + val + "</small>";
+                li.classList.add("list-group-item")
+                li.classList.add("text-info")
+                console.log(val);
+                list.appendChild(li);
+                $("#" + i).append(document.createTextNode(" - " + val));                
+            }
+            item_ind++
+          });
+    
+    }
+
+    window.onload = function () { 
+        listBasicConfig(['Que', 'lo', 'Que']);
+    }
+
+    // ---------------------
+    {% if error %}
+        var errors = '';
+        errors = '{{ error }}';
+        Swal.fire({
+            title: 'Error!',
+            text: errors,
+            icon: 'error'
+        });
+    {% endif %}
+    </script>
 {% endblock %}

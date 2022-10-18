@@ -287,8 +287,12 @@ def basic_export(request):
         messages.error(request, "Debe crear al menos un modelo de configuración de Exportación Básica")
         return redirect(reverse_lazy('export_lsd:config_eb_list'))
 
+    basic_export_config_json = []
+    for item in basic_export_config_qs:
+        basic_export_config_json.append(item.toJSON())
+
     context = {
-        'basic_export_config': basic_export_config_qs
+        'basic_export_config': basic_export_config_json
     }
 
     return render(request, 'export_lsd/export/basic.html', context)
