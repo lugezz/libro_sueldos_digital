@@ -1,8 +1,11 @@
 import datetime
+import json
 
 from django.shortcuts import redirect, render
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.files.storage import FileSystemStorage
 from django.http.response import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -10,6 +13,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Registro
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
+from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
 
 
@@ -280,20 +284,66 @@ class EmpleadoDeleteView(LoginRequiredMixin, DeleteView):
 
 
 # ------------- EXPORT ------------------------------------------------
+@login_required
 def basic_export(request):
+    # Debe tener al menos una configuración básica
     basic_export_config_qs = BasicExportConfig.objects.filter(user=request.user)
 
     if not basic_export_config_qs:
         messages.error(request, "Debe crear al menos un modelo de configuración de Exportación Básica")
         return redirect(reverse_lazy('export_lsd:config_eb_list'))
 
+    # Debe tener al menos una empresa asociada
+    empresa_config_qs = Empresa.objects.filter(user=request.user).order_by('name')
+
+    if not empresa_config_qs:
+        messages.error(request, "Debe tener al menos asociada una empresa para ")
+        return redirect(reverse_lazy('export_lsd:empresa_list'))
+
     basic_export_config_json = []
+    empresa_config_json = []
+
     for item in basic_export_config_qs:
         basic_export_config_json.append(item.toJSON())
 
+    for item2 in empresa_config_qs:
+        empresa_config_json.append(item2.toJSON())
+
     context = {
-        'basic_export_config': basic_export_config_json
+        'basic_export_config': basic_export_config_json,
+        'empresa_config': empresa_config_json,
+        'error': ''
     }
+
+    if request.method == 'POST':
+        try:
+            txt_original = request.FILES['txtfile']
+            cuit = request.POST.get('selectEmpresa')
+            # TODO: Change it to json first
+            export_config = request.POST.get('selectBasicConfig')
+            # TODO: Agregar fecha de pago
+
+        except ValueError:
+            context['error'] = "Formato de archivo incorrecto"
+        except Exception as err:
+            context['error'] = type(err)
+
+        # 1) Grabo el txt temporalmente
+        fs = FileSystemStorage()
+        now_str = datetime.datetime.now().strftime('%Y%m%d%H%M')
+        fname = f'{request.user.username}_{now_str}.txt'
+        file_temp_path = fs.save(f'export_lsd/static/other/{fname}', txt_original)
+
+        # 2) Proceso el archivo enviando el path como argumento
+
+        # 3) Elimino el archivo temporal
+        # fs.delete(file_temp_path)
+
+        # 4) Agrego el path del txt generado al context
+
+        txt_export_filepath = "xx"
+
+        context['txt_export_filepath'] = txt_export_filepath
 
     return render(request, 'export_lsd/export/basic.html', context)
 

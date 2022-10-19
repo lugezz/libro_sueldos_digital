@@ -1,7 +1,15 @@
 {% extends 'export_lsd/list.html' %} {% load static %}
 {% block list_title %} Lista de Empresas{% endblock %}
 {% block head_list %}
-{% endblock %} {% block columns %}
+{% endblock %}
+
+{% block messages %}
+{% if messages %}
+{% include 'export_lsd/messages.html' %}
+{% endif %}
+{% endblock messages %}
+
+{% block columns %}
 <tr class="text-center">
     <th scope="col" style="width: 10%;">Id</th>
     <th scope="col" style="width: 50%;">Nombre</th>
@@ -10,5 +18,12 @@
 </tr>
 {% endblock %} {% block rows %} {% endblock %}
 {% block javascript %}
+    <script>
+    $(document).ready(function() {
+        $("#buttonClose").on('click', function(event) {
+            $(".alert-dismissible").remove()
+        });
+    });
+    </script>
     <script src="{% static 'js/empresa_list.js' %}"></script>
 {% endblock %}

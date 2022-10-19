@@ -7,9 +7,11 @@
         <div class="col-8">
             <form method="post" enctype="multipart/form-data" class="mb-3">  
                 {% csrf_token %}
+                <!-- Selección Configuración -->
                 <p class="mb-1">Seleccione configuración de Exportación Básica</p>
                 <select
                     id="selectBasicConfig"
+                    name="selectBasicConfig"
                     class="form-select mb-3"
                     aria-label="Seleccione Configuración Exportación"
                     onchange="listBasicConfig();"
@@ -22,14 +24,33 @@
                         </option>
                     {% endfor %}
                 </select>
+                <!-- Fin Selección Configuración -->
+
+                <!-- Selección Empresa -->
+                <p class="mb-1">Seleccione Empresa</p>
+                <select
+                    id="selectEmpresa"
+                    name="selectEmpresa"
+                    class="form-select mb-3"
+                    aria-label="Seleccione Empresa"
+                >
+                    {% for item in empresa_config %}
+                        <option
+                            value="{{ item.cuit }}"
+                        >
+                            {{ item.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <!-- Fin Selección Empresa -->
 
                 <p>Seleccione el txt tradicional para exportación de F.931</p>
                 <input class="form-control mb-3" type="file" id="formFile" name="txtfile">
 
                 {% comment %} TODO: Process file {% endcomment %}
-                <a href="#" class="btn btn-primary btn-flat my-3">
+                <button class="btn btn-primary btn-flat my-3 button_submit">
                     <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
-                </a>
+                </button>
 
             </form>
         </div>
@@ -55,30 +76,22 @@
         const thisConfig2 = thisConfig.replaceAll("'", '"').replaceAll('None', 'null');
         const thisConfigJson = $.parseJSON(thisConfig2);
         
-        console.log(thisConfigJson);
         $("#basicExportConfigList").empty()
         $("#configTitle").text("Configuración: " + thisConfigJson['name'])
 
-
         item_ind = 0
         $.each(thisConfigJson, function(i, val) {
-
             if (item_ind > 2) {
                 let li = document.createElement("li");
                 li.innerHTML = "<small><b>"+ i + "</b>" + ": " + val + "</small>";
                 li.classList.add("list-group-item")
                 li.classList.add("text-info")
-                console.log(val);
                 list.appendChild(li);
                 $("#" + i).append(document.createTextNode(" - " + val));                
             }
             item_ind++
           });
     
-    }
-
-    window.onload = function () { 
-        listBasicConfig(['Que', 'lo', 'Que']);
     }
 
     // ---------------------
@@ -91,5 +104,19 @@
             icon: 'error'
         });
     {% endif %}
+
+    $(document).ready(
+    function(){
+        $('.button_submit').attr('disabled',true);
+        $('input:file').change(
+            function(){
+                if ($(this).val()){
+                    $('.button_submit').removeAttr('disabled'); 
+                }
+                else {
+                    $('.button_submit').attr('disabled',true);
+                }
+            });
+    });
     </script>
 {% endblock %}

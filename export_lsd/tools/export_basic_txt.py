@@ -1,7 +1,5 @@
 from datetime import date, datetime
 
-from django.shortcuts import render
-
 from lsd.my_config import lsd_cfg
 from export_lsd.models import OrdenRegistro
 from export_lsd.utils import (amount_txt_to_integer, exclude_eventuales,
@@ -250,14 +248,8 @@ def process_reg5(txt_info):
     return resp_final
 
 
-# def export_txt(txt_file, cuit: str, pay_day: date):
-def export_txt(request):
-    # TODO: Own process
-    txt_file = 'tmp/SD_2022-07.txt'
+def export_txt(txt_file, cuit: str, pay_day: date):
     txt_output_file = f'tmp/exp_{datetime.now().strftime("%Y%m%d_%H%M")}.txt'
-
-    pay_day = datetime.strptime('2022-07-31', '%Y-%m-%d')
-    cuit = '30715119123'
 
     with open(txt_file, encoding='latin-1') as f:
         txt_info = f.readlines()
@@ -276,8 +268,7 @@ def export_txt(request):
     if reg5:
         final_result += '\r\n' + reg5
 
-    # TODO: Change to ANSI
     with open(txt_output_file, 'w', encoding='cp1252') as f:
         f.write(final_result)
 
-    return render(request, 'export_lsd/test.html', {'to_print': final_result})
+    return txt_output_file
