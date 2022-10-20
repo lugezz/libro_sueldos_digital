@@ -1,13 +1,12 @@
-from datetime import date, datetime
+from datetime import date
 
-from lsd.my_config import lsd_cfg
 from export_lsd.models import OrdenRegistro
 from export_lsd.utils import (amount_txt_to_integer, exclude_eventuales,
                               get_value_from_txt, NOT_OS_INSSJP, NOT_SIJP,
                               just_eventuales, sync_format)
 
 
-def process_reg1(cuit: str, pay_day: date, employees: int):
+def process_reg1(cuit: str, pay_day: date, employees: int, export_config: dict) -> str:
     """
     Identificacion del tipo de registro	2	1	2	Alfabético
     CUIT del empleador	11	3	13	Numérico
@@ -23,8 +22,7 @@ def process_reg1(cuit: str, pay_day: date, employees: int):
     resp += pay_day.strftime('%Y%m')
     resp += 'M00001'
 
-    # TODO: Get user
-    ds_base = lsd_cfg()['default'].get('dia_base', 30)
+    ds_base = export_config['dias_base']
     resp += str(ds_base).zfill(2) + str(employees).zfill(6)
 
     if len(resp) != 35:
@@ -33,7 +31,7 @@ def process_reg1(cuit: str, pay_day: date, employees: int):
     return resp
 
 
-def process_reg2(txt_info: str, payday: date):
+def process_reg2(txt_info: str, payday: date, export_config: dict) -> str:
     """
     Identificacion del tipo de registro	2	1	2
     CUIL del trabajador	11	3	13
@@ -49,10 +47,9 @@ def process_reg2(txt_info: str, payday: date):
     leg = 1
     for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
-        # TODO: Get user
-        area = lsd_cfg()['default'].get('area', '').ljust(50)
+        area = export_config['area'].ljust(50)
         fecha_pago = payday.strftime('%Y%m%d')
-        forma_pago = str(lsd_cfg()['default'].get('forma_pago', 0))
+        forma_pago = export_config['forma_pago']
         cbu = " " * 22
         fecha_rubrica = " " * 8
 
@@ -66,7 +63,7 @@ def process_reg2(txt_info: str, payday: date):
     return resp_final
 
 
-def process_reg3(txt_info):
+def process_reg3(txt_info: str, export_config: dict) -> str:
     """
     Identificación del tipo de registro	2	1	2
     CUIL del trabajador	11	3	13
@@ -95,17 +92,16 @@ def process_reg3(txt_info):
         no_remun = amount_txt_to_integer(get_value_from_txt(legajo, 'Conceptos no remunerativos')) - no_rem_especial
         ds_trab = str(amount_txt_to_integer(get_value_from_txt(legajo, 'Cantidad de días trabajados'))).zfill(5)
 
-        # TODO: Get user
-        ccn_sueldo = lsd_cfg()['default'].get('ccn_sueldo', '').ljust(10)
-        ccn_no_rem = lsd_cfg()['default'].get('ccn_no_rem', '').ljust(10)
-        ccn_no_osysind = lsd_cfg()['default'].get('ccn_no_osysind', '').ljust(10)
-        ccn_no_sind = lsd_cfg()['default'].get('ccn_no_sind', '').ljust(10)
-        ccn_sijp = lsd_cfg()['default'].get('ccn_sijp', '').ljust(10)
-        ccn_inssjp = lsd_cfg()['default'].get('ccn_inssjp', '').ljust(10)
-        ccn_os = lsd_cfg()['default'].get('ccn_os', '').ljust(10)
-        ccn_sindicato = lsd_cfg()['default'].get('ccn_sindicato', '').ljust(10)
-        porc_sindicato = lsd_cfg()['default'].get('porc_sindicato', 0)
-        tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
+        ccn_sueldo = export_config['ccn_sueldo'].ljust(10)
+        ccn_no_rem = export_config['ccn_no_rem'].ljust(10)
+        ccn_no_osysind = export_config['ccn_no_osysind'].ljust(10)
+        ccn_no_sind = export_config['ccn_no_sind'].ljust(10)
+        ccn_sijp = export_config['ccn_sijp'].ljust(10)
+        ccn_inssjp = export_config['ccn_inssjp'].ljust(10)
+        ccn_os = export_config['ccn_os'].ljust(10)
+        ccn_sindicato = export_config['ccn_sindicato'].ljust(10)
+        porc_sindicato = export_config['porc_sindicato']
+        tipo_nr = export_config['tipo_nr']
 
         # Sueldo
         item = f'03{cuil}{ccn_sueldo}{ds_trab}D{str(remun).zfill(15)}C{" " * 6}'
@@ -153,7 +149,7 @@ def process_reg3(txt_info):
     return resp_final
 
 
-def process_reg4(txt_info):
+def process_reg4(txt_info: str, export_config: dict) -> str:
     resp = []
     reg4_qs = OrdenRegistro.objects.filter(tiporegistro__order=4)
 
@@ -195,8 +191,7 @@ def process_reg4(txt_info):
                     # Valido R4
                     # R4 = Rem + NR OS y Sind + Ap.Ad.OS
                     # Ap.Ad.OS = R4 - Rem - NR OS y Sind
-                    # TODO: Get user
-                    tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
+                    tipo_nr = export_config['tipo_nr']
                     resta = rem2 if tipo_nr != 2 else rem9
                     aa_os = rem4 - resta
                     linea += str(aa_os).zfill(15)
@@ -205,8 +200,7 @@ def process_reg4(txt_info):
                     # Valido R8
                     # R8 = Rem + NR OS y Sind + Ct.Ad.OS
                     # Ct.Ad.OS = R8 - Rem - NR OS y Sind
-                    # TODO: Get user
-                    tipo_nr = lsd_cfg()['default'].get('tipo_nr', 0)
+                    tipo_nr = export_config['tipo_nr']
                     resta = rem2 if tipo_nr != 2 else rem9
                     aa_os = rem8 - resta
                     linea += str(aa_os).zfill(15)
@@ -221,7 +215,7 @@ def process_reg4(txt_info):
     return resp_final
 
 
-def process_reg5(txt_info):
+def process_reg5(txt_info: str, export_config: dict) -> str:
     """
     Identificacion del tipo de registro	2	1	2
     CUIL del trabajador	11	3	13
@@ -236,7 +230,7 @@ def process_reg5(txt_info):
     for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
         # TODO: Get información de simplicación registral, ver forma
-        cuit_emp = lsd_cfg()['default'].get('cuit_empleador_eventuales', '')
+        cuit_emp = export_config['cuit_empleador_eventuales']
         rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
 
         item = f'05{cuil}     1   12022010199991231{str(rem9).zfill(15)}{cuit_emp}'
@@ -248,8 +242,9 @@ def process_reg5(txt_info):
     return resp_final
 
 
-def export_txt(txt_file, cuit: str, pay_day: date):
-    txt_output_file = f'tmp/exp_{datetime.now().strftime("%Y%m%d_%H%M")}.txt'
+def export_txt(txt_file, cuit: str, pay_day: date, export_config: dict) -> str:
+    temp_sp = txt_file.split('/')
+    txt_output_file = f'{("/").join(temp_sp[:-1])}/exp_{temp_sp[-1]}'
 
     with open(txt_file, encoding='latin-1') as f:
         txt_info = f.readlines()
@@ -258,11 +253,11 @@ def export_txt(txt_file, cuit: str, pay_day: date):
     txt_no_eventuales = exclude_eventuales(txt_clean_info)
     txt_just_eventuales = just_eventuales(txt_clean_info)
 
-    reg1 = process_reg1(cuit, pay_day, len(txt_clean_info))
-    reg2 = process_reg2(txt_no_eventuales, pay_day)
-    reg3 = process_reg3(txt_no_eventuales)
-    reg4 = process_reg4(txt_clean_info)
-    reg5 = process_reg5(txt_just_eventuales) if txt_just_eventuales else ''
+    reg1 = process_reg1(cuit, pay_day, len(txt_clean_info), export_config)
+    reg2 = process_reg2(txt_no_eventuales, pay_day, export_config)
+    reg3 = process_reg3(txt_no_eventuales, export_config)
+    reg4 = process_reg4(txt_clean_info, export_config)
+    reg5 = process_reg5(txt_just_eventuales, export_config) if txt_just_eventuales else ''
 
     final_result = reg1 + '\r\n' + reg2 + '\r\n' + reg3 + '\r\n' + reg4
     if reg5:

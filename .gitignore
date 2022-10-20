@@ -5,4 +5,3 @@ exp_*.txt
 *.xlsx
 *.pyc
 tmp/
-lu*.txt

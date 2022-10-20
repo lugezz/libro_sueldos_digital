@@ -1,5 +1,4 @@
 import datetime
-import json
 
 from django.shortcuts import redirect, render
 from django.contrib import messages
@@ -319,9 +318,10 @@ def basic_export(request):
         try:
             txt_original = request.FILES['txtfile']
             cuit = request.POST.get('selectEmpresa')
-            # TODO: Change it to json first
-            export_config = request.POST.get('selectBasicConfig')
-            # TODO: Agregar fecha de pago
+            fecha_pago_str = request.POST.get('payDay')
+            fecha_pago = datetime.datetime.strptime(fecha_pago_str, '%d/%m/%Y')
+            export_config = eval(request.POST.get('selectBasicConfig'))
+            print(export_config)
 
         except ValueError:
             context['error'] = "Formato de archivo incorrecto"
@@ -332,18 +332,16 @@ def basic_export(request):
         fs = FileSystemStorage()
         now_str = datetime.datetime.now().strftime('%Y%m%d%H%M')
         fname = f'{request.user.username}_{now_str}.txt'
-        file_temp_path = fs.save(f'export_lsd/static/other/{fname}', txt_original)
+        file_temp_path = fs.save(f'export_lsd/static/temp/{fname}', txt_original)
 
         # 2) Proceso el archivo enviando el path como argumento
+        txt_final_export_filepath = export_txt(file_temp_path, cuit, fecha_pago, export_config)
 
         # 3) Elimino el archivo temporal
-        # fs.delete(file_temp_path)
+        fs.delete(file_temp_path)
 
         # 4) Agrego el path del txt generado al context
-
-        txt_export_filepath = "xx"
-
-        context['txt_export_filepath'] = txt_export_filepath
+        context['txt_export_filepath'] = txt_final_export_filepath
 
     return render(request, 'export_lsd/export/basic.html', context)
 
