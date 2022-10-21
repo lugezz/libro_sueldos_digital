@@ -12,6 +12,10 @@
 {% block content %}
 
 <div class="container my-3">
+    {% if messages %}
+        {% include 'export_lsd/messages.html' %}
+    {% endif %}
+
     <div class="row">
         <div class="col-8">
             <form method="post" enctype="multipart/form-data" class="mb-3">  
@@ -61,13 +65,16 @@
                 <!-- Fin Fecha de pago -->
 
                 <p>Seleccione el txt tradicional para exportación de F.931</p>
-                <input class="form-control mb-3" type="file" id="formFile" name="txtfile">
+                <input class="form-control mb-3" type="file" id="formFile" name="txtfile" accept=".txt">
 
-                {% comment %} TODO: Process file {% endcomment %}
                 <button class="btn btn-primary btn-flat my-3 button_submit">
                     <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
                 </button>
             </form>
+
+            {% if txt_export_filepath %}
+                <a href="{% static txt_export_filepath %}" class="btn btn-success btn-flat" download>Descargar el archivo</a>
+            {% endif %}
         </div>
 
         <!-- Export Config Detailed  -->
@@ -77,6 +84,7 @@
                 <ul id="basicExportConfigList"></ul>
             </div>
         </div>
+        
     </div>
 {% endblock content %}
 
@@ -140,13 +148,19 @@
 
     $(document).ready(
     function(){
+        // Detailed config
+        listBasicConfig()
         // Date picker
         var lastDayPrevMonth = new Date();
         lastDayPrevMonth.setDate(0);
         final_date = formatDate(lastDayPrevMonth)
         $('#payDay').val(final_date);
 
-        var date_input=$('input[name="payDay"]'); //our date input has the name "date"
+        $("#buttonClose").on('click', function(event) {
+            $(".alert-dismissible").remove()
+        });
+
+        var date_input=$('input[name="payDay"]');
         var container=$('.bootstrap-iso form').length>0 ? $('.bootstrap-iso form').parent() : "body";
         var options={
           format: 'dd/mm/yyyy',

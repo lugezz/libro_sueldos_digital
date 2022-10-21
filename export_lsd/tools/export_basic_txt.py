@@ -90,6 +90,11 @@ def process_reg3(txt_info: str, export_config: dict) -> str:
 
         no_rem_especial = rem9 - remun
         no_remun = amount_txt_to_integer(get_value_from_txt(legajo, 'Conceptos no remunerativos')) - no_rem_especial
+        # Detectados redondeos, lo quito
+        if no_remun < 5:
+            no_rem_especial += no_remun
+            no_remun = 0
+
         ds_trab = str(amount_txt_to_integer(get_value_from_txt(legajo, 'Cantidad de días trabajados'))).zfill(5)
 
         ccn_sueldo = export_config['ccn_sueldo'].ljust(10)
@@ -100,8 +105,8 @@ def process_reg3(txt_info: str, export_config: dict) -> str:
         ccn_inssjp = export_config['ccn_inssjp'].ljust(10)
         ccn_os = export_config['ccn_os'].ljust(10)
         ccn_sindicato = export_config['ccn_sindicato'].ljust(10)
-        porc_sindicato = export_config['porc_sindicato']
-        tipo_nr = export_config['tipo_nr']
+        porc_sindicato = int(export_config['porc_sindicato'])
+        tipo_nr = int(export_config['tipo_nr'])
 
         # Sueldo
         item = f'03{cuil}{ccn_sueldo}{ds_trab}D{str(remun).zfill(15)}C{" " * 6}'
@@ -192,7 +197,7 @@ def process_reg4(txt_info: str, export_config: dict) -> str:
                     # R4 = Rem + NR OS y Sind + Ap.Ad.OS
                     # Ap.Ad.OS = R4 - Rem - NR OS y Sind
                     tipo_nr = export_config['tipo_nr']
-                    resta = rem2 if tipo_nr != 2 else rem9
+                    resta = rem2 if tipo_nr != '2' else rem9
                     aa_os = rem4 - resta
                     linea += str(aa_os).zfill(15)
 
@@ -201,7 +206,7 @@ def process_reg4(txt_info: str, export_config: dict) -> str:
                     # R8 = Rem + NR OS y Sind + Ct.Ad.OS
                     # Ct.Ad.OS = R8 - Rem - NR OS y Sind
                     tipo_nr = export_config['tipo_nr']
-                    resta = rem2 if tipo_nr != 2 else rem9
+                    resta = rem2 if tipo_nr != '2' else rem9
                     aa_os = rem8 - resta
                     linea += str(aa_os).zfill(15)
 

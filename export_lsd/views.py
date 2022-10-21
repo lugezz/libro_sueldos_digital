@@ -321,12 +321,15 @@ def basic_export(request):
             fecha_pago_str = request.POST.get('payDay')
             fecha_pago = datetime.datetime.strptime(fecha_pago_str, '%d/%m/%Y')
             export_config = eval(request.POST.get('selectBasicConfig'))
-            print(export_config)
 
         except ValueError:
             context['error'] = "Formato de archivo incorrecto"
         except Exception as err:
             context['error'] = type(err)
+
+        # Exportación exitosa
+        messages.success(request, "Generación de archivo de exportación básica realizada correctamente, \
+            archivo disponible para la descarga")
 
         # 1) Grabo el txt temporalmente
         fs = FileSystemStorage()
@@ -341,11 +344,14 @@ def basic_export(request):
         fs.delete(file_temp_path)
 
         # 4) Agrego el path del txt generado al context
-        context['txt_export_filepath'] = txt_final_export_filepath
+        txt_final_export_filepath_static = txt_final_export_filepath.split('/')
+        txt_final_export_filepath_static = '/'.join(txt_final_export_filepath_static[-2:])
+        context['txt_export_filepath'] = txt_final_export_filepath_static
 
     return render(request, 'export_lsd/export/basic.html', context)
 
 
+@login_required
 def import_empleados(request):
     result = {
         'error': '',
@@ -359,8 +365,6 @@ def import_empleados(request):
             data = request.session['all_data']
             bulk_mgr = BulkCreateManager()
             for item in data:
-                print(item[0])
-                print(item)
                 empresa = Empresa.objects.get(cuit=item[0])
                 bulk_mgr.add(Empleado(empresa=empresa, leg=item[1], name=item[2], cuil=item[3]))
             bulk_mgr.done()
@@ -379,13 +383,26 @@ def import_empleados(request):
     return render(request, 'export_lsd/export/empleados.html', result)
 
 
+@login_required
 def advanced_export(request):
+    # Debe tener al menos una empresa asociada
+    empresas_qs = Empresa.objects.filter(user=request.user).order_by('name')
+
+    if not empresas_qs:
+        messages.error(request, "Debe tener al menos asociada una empresa para ")
+        return redirect(reverse_lazy('export_lsd:empresa_list'))
+
+    empresas_json = []
+
+    for item in empresas_qs:
+        empresas_json.append(item.toJSON())
 
     context = {
-        'title': 'Exportación Avanzada',
+        'empresas': empresas_json,
+        'error': ''
     }
 
-    return render(request, 'export_lsd/advanced.html', context)
+    return render(request, 'export_lsd/export/advanced.html', context)
 
 
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------
