@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{% static 'lib/bootstrap-datepicker/bootstrap-datepicker3.css' %}"/>
 {% endblock %}
 
+{% comment %} TODO: Usar Django Forms {% endcomment %}
 
 {% block content %}
 
@@ -16,10 +17,10 @@
     {% if messages %}
         {% include 'export_lsd/messages.html' %}
     {% endif %}
-
-    <form method="post" enctype="multipart/form-data" class="mb-3">  
-    {% csrf_token %}
+    
     <div class="row">
+        <form method="post" enctype="multipart/form-data" class="mb-3" id="F931form">  
+        {% csrf_token %}
         <div class="col-8">    
             <!-- Selección Empresa -->
             <p class="mb-1">Seleccione Empresa</p>
@@ -40,22 +41,34 @@
             <!-- Fin Selección Empresa -->
 
             <p>Seleccione el txt tradicional para exportación de F.931</p>
-            <input class="form-control mb-3" type="file" id="formFile" name="txtfile" accept=".txt">
+            <input class="form-control mb-3" type="file" id="F931file" name="txtfile" accept=".txt">
+        </form>
         </div>
+    
         <!-- Export Config Detailed  -->
         <div class="col-4"> 
+            {% if F931_result %}
             <div class="card top-selling overflow-auto">
-                <h5 id="configTitle" class="card-title text-center mb-0">Detalle configuración</h5>
-                <ul id="basicExportConfigList"></ul>
+                <h5 id="configTitle" class="card-title text-center mb-0">Resumen Presentación</h5>
+                <ul id="F.931">
+                    {% for item in F931_result %}
+                    <li>{{ item }} </li>
+                    {% endfor %}
+                </ul>
             </div>
+            {% endif %}
         </div>
     </div>
+    
+    <hr>
+    
+    <form method="post" enctype="multipart/form-data" class="mb-3">
+    {% csrf_token %}
     <div class="row">
-        <hr>
         <div class="col-3">
             <!-- Fecha de pago -->
             <div class="form-group mb-3"> 
-                <label class="control-label mb-1" for="date">Date</label>
+                <label class="control-label mb-1" for="date">Fecha de Pago</label>
                 <input class="form-control" id="payDay" name="payDay" placeholder="DD/MM/YYY" type="text"/>
             </div>
             <!-- Fin Fecha de pago -->
@@ -132,9 +145,9 @@
     </div>
     </form>
 
-            {% if txt_export_filepath %}
-                <a href="{% static txt_export_filepath %}" class="btn btn-success btn-flat" download>Descargar el archivo</a>
-            {% endif %}
+    {% if txt_export_filepath %}
+        <a href="{% static txt_export_filepath %}" class="btn btn-success btn-flat" download>Descargar el archivo</a>
+    {% endif %}
     </div>
 {% endblock content %}
 
@@ -177,6 +190,10 @@
             icon: 'error'
         });
     {% endif %}
+
+    $('#F931file').change(function() {
+        $('#F931form').submit();
+    });
 
     $(document).ready(
     function(){

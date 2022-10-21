@@ -402,6 +402,11 @@ def advanced_export(request):
         'error': ''
     }
 
+    if request.method == 'POST':
+        # Txt F931 subido
+        if 'txtfile' in request.POST:
+            context['F931_result'] = {'empleados': 20, 'remuneracion': 1313093.33, 'no_rem': 100101.11}
+
     return render(request, 'export_lsd/export/advanced.html', context)
 
 
