@@ -404,8 +404,15 @@ def advanced_export(request):
 
     if request.method == 'POST':
         # Txt F931 subido
-        if 'txtfile' in request.POST:
-            context['F931_result'] = {'empleados': 20, 'remuneracion': 1313093.33, 'no_rem': 100101.11}
+        if 'txtfile' in request.FILES:
+            # 1) Grabo el txt temporalmente
+            fs = FileSystemStorage()
+            fname = f'temptxt_{request.user.username}_{request.POST.get("selectEmpresa")}.txt'
+            fs.delete(f'export_lsd/static/temp/{fname}')
+            fs.save(f'export_lsd/static/temp/{fname}', request.FILES['txtfile'])
+
+            # TODO: Obtener los resultados y resumirlos en diccionar con valores string ya formateados
+            context['F931_result'] = {'Empleados': 20, 'Remuneracion': 1313093.33, 'No Remunerativos': 100101.11}
 
     return render(request, 'export_lsd/export/advanced.html', context)
 
