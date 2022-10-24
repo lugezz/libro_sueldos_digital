@@ -12,6 +12,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Registro
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
+from export_lsd.tools.export_advanced_txt import get_summary_txtF931
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
 
@@ -408,11 +409,12 @@ def advanced_export(request):
             # 1) Grabo el txt temporalmente
             fs = FileSystemStorage()
             fname = f'temptxt_{request.user.username}_{request.POST.get("selectEmpresa")}.txt'
-            fs.delete(f'export_lsd/static/temp/{fname}')
-            fs.save(f'export_lsd/static/temp/{fname}', request.FILES['txtfile'])
+            fpath = f'export_lsd/static/temp/{fname}'
+            fs.delete(fpath)
+            fs.save(fpath, request.FILES['txtfile'])
 
             # TODO: Obtener los resultados y resumirlos en diccionar con valores string ya formateados
-            context['F931_result'] = {'Empleados': 20, 'Remuneracion': 1313093.33, 'No Remunerativos': 100101.11}
+            context['F931_result'] = get_summary_txtF931(fpath)
 
     return render(request, 'export_lsd/export/advanced.html', context)
 

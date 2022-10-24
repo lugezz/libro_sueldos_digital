@@ -163,7 +163,7 @@ def process_reg4(txt_info: str, export_config: dict) -> str:
         mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
         rem2 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
         rem4 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
-        rem8 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
+        rem8 = amount_txt_to_integer(get_value_from_txt(legajo, 'Rem.Dec.788/05 - Rem Impon. 8'))
         rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
         rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
         detr = amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
