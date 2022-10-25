@@ -108,10 +108,39 @@ class Empleado(models.Model):
         unique_together = (('leg', 'empresa'),)
 
 
-class Registro(models.Model):
+class Presentacion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    periodo = models.DateField()
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    employees = models.PositiveSmallIntegerField(default=0)
+    remuneracion = models.FloatField(default=0.0)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f'{self.empresa.name} - {self.periodo.strftime("%Y/%m")} '
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        user = get_current_user()
+        if user and not user.pk:
+            user = None
+        if not self.pk:
+            self.user = user
+        self.user = user
+        return super().save(force_insert, force_update, using, update_fields)
+
+    class Meta:
+        verbose_name_plural = 'Presentaciones'
+
+
+class Liquidacion(models.Model):
+    presentacion = models.ForeignKey(Presentacion, on_delete=models.CASCADE)
     employees = models.PositiveSmallIntegerField()
     created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Liquidaciones'
 
 
 class BasicExportConfig(models.Model):

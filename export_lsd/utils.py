@@ -21,6 +21,13 @@ def amount_txt_to_integer(amount_txt: str, mulitp=100) -> int:
     return resp
 
 
+def amount_txt_to_float(amount_txt: str, mulitp=100) -> float:
+    resp = float(amount_txt.replace(',', '.')) * mulitp
+    resp = float(resp)
+
+    return resp
+
+
 def exclude_eventuales(txt_info: str) -> str:
     resp = []
     for legajo in txt_info:

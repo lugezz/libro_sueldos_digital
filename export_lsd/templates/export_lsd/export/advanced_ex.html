@@ -18,22 +18,32 @@
     {% endif %}
     
     <div class="row">
-        <div class="col-8">
-        <p class="h1 text-center mb-5">Exportación Avanzada</p>
+        <div class="col-8">  
         <form method="post" enctype="multipart/form-data" class="mb-3" id="F931form">  
         {% csrf_token %}
             <!-- Selección Empresa -->
-            {{ form.empresa.label_tag }}
-            {{ form.empresa }}
+            <p class="mb-1">Seleccione Empresa</p>
+            <select
+                id="selectEmpresa"
+                name="selectEmpresa"
+                class="form-select mb-3"
+                aria-label="Seleccione Empresa"
+            >
+                {% for item in empresas %}
+                    <option value="{{ item.cuit }}">
+                        {{ item.name }}
+                    </option>
+                {% endfor %}
+            </select>
             <!-- Fin Selección Empresa -->
             <div class="row">
                 <div class="col-6">
-                    {{ form.periodo.label_tag }}
-                    {{ form.periodo }}
+                    <label class="control-label mb-1" for="perLiq">Período Liquidación</label>
+                    <input class="form-control mb-3" id="perLiq" name="perLiq" placeholder="MM/YYYY" type="month"/>
                 </div>
                 <div class="col-6">
-                    {{ form.txtF931.label_tag }}
-                    {{ form.txtF931 }}
+                    <label class="control-label mb-1" for="F931file">Seleccione el txt de F.931</label>
+                    <input class="form-control mb-3" type="file" id="F931file" name="txtfile" accept=".txt">
                 </div>
                 {% if F931_result %}
                     <div class="col-12 text-center">
@@ -75,6 +85,15 @@
 
 {% block footer_js %}
     <script>
+
+    // Fill select nroLiq
+    function fillSelect(){
+        var $select = $("#nroLiq");
+        for (i=1; i<=25; i++){
+            $select.append($('<option></option>').val(i).html(i))
+        };
+    };
+
     function formatDate(inputDate, ismonth=false) {
         let date, month, year;
         
@@ -108,54 +127,40 @@
         });
     {% endif %}
 
-    $('.button_submit').on('click', function (e) {
-        e.preventDefault();
-        $.confirm({
-            theme: 'material',
-            title: 'Notificación',
-            icon: 'fa fa-info',
-            content: '¿Estas seguro de realizar la siguiente acción?<br>En caso de existir un registro será sobreescrito',
-            columnClass: 'small',
-            typeAnimated: true,
-            cancelButtonClass: 'btn-primary',
-            draggable: true,
-            dragWindowBorder: false,
-            buttons: {
-                info: {
-                    text: "Si",
-                    btnClass: 'btn-primary',
-                    action: function() {
-                        console.log('Acepté')
-                        $('form').submit();
-                    }
-                },
-                danger: {
-                    text: "No",
-                    btnClass: 'btn-red',
-                    action: function() {
-                    }
-                },
-            }
-        })
-    });
-
-    $('#id_txtF931').change(function() {
+    $('#F931file').change(function() {
         $('#F931form').submit();
     });
 
     $(document).ready(
     function(){
+        fillSelect()
+
+        // Date picker
         var lastDayPrevMonth = new Date();
         lastDayPrevMonth.setDate(0);
         final_date = formatDate(lastDayPrevMonth)
         final_date_mth = formatDate(lastDayPrevMonth, true)
 
-        $('#id_periodo').val(final_date_mth);
-        $("#id_empresa").children().first().remove() // Delete empty element
+        $('#payDay').val(final_date);
+        $('#perLiq').val(final_date_mth);
 
         $("#buttonClose").on('click', function(event) {
             $(".alert-dismissible").remove()
         });
+
+        var date_input=$('input[name="payDay"]');
+        var container=$('.bootstrap-iso form').length>0 ? $('.bootstrap-iso form').parent() : "body";
+        var options={
+          format: 'dd/mm/yyyy',
+          language: 'es',
+          endDate: 'today',
+          container: container,
+          todayHighlight: true,
+          daysOfWeekDisabled: [0, 6],
+          autoclose: true,
+        };
+        date_input.datepicker(options);
+        // End Date picker
     });
     </script>
 {% endblock %}

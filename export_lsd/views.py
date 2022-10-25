@@ -10,8 +10,8 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
-from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Registro
-from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm
+from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
+from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, PeriodoForm
 from export_lsd.tools.export_advanced_txt import get_summary_txtF931
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
@@ -22,7 +22,7 @@ class HomeView(TemplateView):
     template_name = 'export_lsd/home.html'
 
     def get_context_data(self, **kwargs):
-        query_historia = Registro.objects.filter(empresa__user=self.request.user)
+        query_historia = Liquidacion.objects.filter(empresa__user=self.request.user)
         today = datetime.date.today()
         last_month = today.replace(day=1) - datetime.timedelta(days=1)
         last_month_str = last_month.strftime("%Y-%m")
@@ -388,35 +388,66 @@ def import_empleados(request):
 def advanced_export(request):
     # Debe tener al menos una empresa asociada
     empresas_qs = Empresa.objects.filter(user=request.user).order_by('name')
+    form = PeriodoForm(request.POST or None)
 
     if not empresas_qs:
-        messages.error(request, "Debe tener al menos asociada una empresa para ")
+        messages.error(request, "Debe tener al menos asociada una empresa")
         return redirect(reverse_lazy('export_lsd:empresa_list'))
 
-    empresas_json = []
-
-    for item in empresas_qs:
-        empresas_json.append(item.toJSON())
-
     context = {
-        'empresas': empresas_json,
-        'error': ''
+        'error': '',
+        'form': form
     }
 
     if request.method == 'POST':
         # Txt F931 subido
-        if 'txtfile' in request.FILES:
+        if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
             fs = FileSystemStorage()
-            fname = f'temptxt_{request.user.username}_{request.POST.get("selectEmpresa")}.txt'
+            cuit = request.POST.get("selectEmpresa")
+            per_liq = request.POST.get("periodo").replace('-', '')
+            fname = f'temptxt_{request.user.username}_{cuit}_{per_liq}.txt'
             fpath = f'export_lsd/static/temp/{fname}'
             fs.delete(fpath)
-            fs.save(fpath, request.FILES['txtfile'])
+            fs.save(fpath, request.FILES['txtF931'])
 
-            # TODO: Obtener los resultados y resumirlos en diccionar con valores string ya formateados
-            context['F931_result'] = get_summary_txtF931(fpath)
+            try:
+                context['F931_result'] = get_summary_txtF931(fpath)
+            except Exception:
+                form = PeriodoForm()
+                context['error'] = "Error en el formato del archivo seleccionado"
+
+        # Procesar nomás
+        else:
+            # TODO: Grabar presentación, borrar primero por si hay un registro anterior
+            return redirect(reverse_lazy('export_lsd:advanced_liqs', args=['lugezz_30123456781_198001']))
 
     return render(request, 'export_lsd/export/advanced.html', context)
+
+
+@login_required
+def advanced_export_liqs(request, periodo: str):
+    # Debe estar vinculada a un período de una empresa - Formato cuit_yyyymm
+    per = periodo.split('_')
+    username = per[0]
+    cuit = per[1]
+    periodo = per[2][:4] + '-' + per[1][-2:] + '-01'
+    periodo_qs = Presentacion.objects.filter(user__username=username, empresa__cuit=cuit, periodo=periodo)
+
+    if not periodo_qs:
+        messages.error(request, "No se ha creado esta liquidación")
+        return redirect(reverse_lazy('export_lsd:advanced'))
+
+    context = {
+        'liquidaciones': periodo_qs,
+        'error': ''
+    }
+    print(context)
+
+    if request.method == 'POST':
+        pass
+
+    return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
 
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------

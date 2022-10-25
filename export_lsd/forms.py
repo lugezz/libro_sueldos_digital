@@ -1,6 +1,8 @@
-from django.forms import Field, ModelForm, TextInput, ValidationError
+from django.forms import (DateInput, Field, FileField, FileInput,
+                          ModelForm, Select, TextInput,
+                          ValidationError)
 
-from export_lsd.models import BasicExportConfig, Empresa, Empleado
+from export_lsd.models import BasicExportConfig, Empresa, Empleado, Presentacion
 from export_lsd.tools.import_empleados import is_positive_number
 
 
@@ -95,6 +97,48 @@ class ConfigEBForm(ModelForm):
         model = BasicExportConfig
         fields = '__all__'
         exclude = ['user']
+
+    def save(self, commit=True):
+        data = {}
+        form = super()
+        try:
+            if form.is_valid():
+                form.save()
+            else:
+                data['error'] = form.errors
+        except Exception as e:
+            data['error'] = str(e)
+        return data
+
+
+class PeriodoForm(ModelForm):
+    txtF931 = FileField(
+        widget=FileInput(
+            attrs={
+                'class': 'form-control mb-3'
+            }),
+        label='txt F.931',
+        required=False)
+
+    class Meta:
+        model = Presentacion
+        fields = ['periodo', 'empresa', 'txtF931']
+
+        widgets = {
+            'empresa': Select(
+                attrs={
+                    'placeholder': "Ingrese el nombre de empresa",
+                    'class': "form-select mb-3"
+                }
+            ),
+            'periodo': DateInput(
+                attrs={
+                    'placeholder': "MM/YYYY",
+                    'type': "month",
+                    'class': "form-select mb-3"
+                }
+            ),
+        }
 
     def save(self, commit=True):
         data = {}
