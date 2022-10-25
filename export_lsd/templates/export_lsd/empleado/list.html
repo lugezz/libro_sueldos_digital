@@ -4,6 +4,12 @@
 {% block head_list %}
 {% endblock %}
 
+{% block messages %}
+{% if messages %}
+{% include 'export_lsd/messages.html' %}
+{% endif %}
+{% endblock messages %}
+
 {% block columns %}
     <tr>
         <th scope="col" style="width: 10%;">Leg</th>
@@ -22,5 +28,12 @@
 {% endblock %}
 
 {% block javascript %}
+    <script>
+    $(document).ready(function() {
+        $("#buttonClose").on('click', function(event) {
+            $(".alert-dismissible").remove()
+        });
+    });
+    </script>
     <script src="{% static 'js/empleado_list.js' %}"></script>
 {% endblock %}

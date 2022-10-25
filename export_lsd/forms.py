@@ -115,7 +115,8 @@ class PeriodoForm(ModelForm):
     txtF931 = FileField(
         widget=FileInput(
             attrs={
-                'class': 'form-control mb-3'
+                'class': 'form-control mb-3',
+                'accept': '.txt'
             }),
         label='txt F.931',
         required=False)
@@ -157,7 +158,8 @@ class LiquidacionForm(ModelForm):
     xlsx_liq = FileField(
         widget=FileInput(
             attrs={
-                'class': 'form-control mb-3'
+                'class': 'form-control mb-3',
+                'accept': '.xlsx'
             }),
         label='Seleccione planilla liquidación')
 

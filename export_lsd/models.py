@@ -112,8 +112,13 @@ class Presentacion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     periodo = models.DateField()
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    closed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    @property
+    def periodo_str(self):
+        return self.periodo.strftime('%Y%m')
 
     def __str__(self) -> str:
         return f'{self.empresa.name} - {self.periodo.strftime("%Y/%m")} '
@@ -144,6 +149,20 @@ class Liquidacion(models.Model):
     class Meta:
         verbose_name_plural = 'Liquidaciones'
         unique_together = (('nroLiq', 'presentacion'),)
+
+
+class ConceptoLiquidacion(models.Model):
+    liquidacion = models.ForeignKey(Liquidacion, on_delete=models.CASCADE)
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
+    concepto = models.CharField(max_length=10)
+    cantidad = models.PositiveSmallIntegerField(default=0)
+    importe = models.FloatField(default=0)
+
+    def __str__(self) -> str:
+        return f'{self.empleado.legajo} - {self.concepto} - $ {self.importe}'
+
+    class Meta:
+        verbose_name_plural = 'ConceptoLiquidaciones'
 
 
 class BasicExportConfig(models.Model):

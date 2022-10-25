@@ -33,14 +33,14 @@
         </div>
 
         <div class="col-2">
-            <p class="mb-1">Núm. Liq.</p>
+            <p class="mb-1">N°Liq.</p>
             {{ form.nroLiq }}
         </div>
 
         <div class="col-7">
             <p class="mb-1">Seleccione planilla liquidación</p>
-            <input class="form-control mb-0" type="file" id="xls-liq" name="xls-liq" accept=".xlsx">
-            <a href="{% static 'other/Import Liquidacion.xlsx' %}">
+            {{ form.xlsx_liq}}
+            <a href="{% static 'other/Import_Liquidacion.xlsx' %}">
                 <small class="text-center">Descargar modelo</small>
             </a>
         </div>
@@ -113,10 +113,10 @@
 
     // Fill select nroLiq
     function fillSelect(){
-        var $select = $("#nroLiq");
-        for (i=1; i<=25; i++){
-            $select.append($('<option></option>').val(i).html(i))
-        };
+        var $select = $("#id_nroLiq");
+        {{nro_liqs_open}}.forEach(function (item) {
+            $select.append($('<option></option>').val(item).html(item))
+        });
     };
 
     function formatDate(inputDate, ismonth=false) {
@@ -183,7 +183,7 @@
         // End Date picker
 
         $('.button_submit').attr('disabled',true);
-        $('#xls-liq').change(
+        $('#id_xlsx_liq').change(
             function(){
                 if ($(this).val()){
                     $('.button_submit').removeAttr('disabled'); 

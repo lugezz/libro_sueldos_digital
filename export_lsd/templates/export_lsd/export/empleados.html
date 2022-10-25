@@ -36,14 +36,19 @@
                         </thead>
                         <tbody>
                             {% if results %}
-                                {% for result in results %}
+                              {% for result in results %}
                                 <tr>
                                     {% for item in result %}
-                                    <td class='text-center'>{{ item }}</td>
+                                        {% if forloop.counter == 3 %}
+                                            <td><small>{{ item }}</small></td>
+                                        {% else %}
+                                            <td class='text-center'><small>{{ item|stringformat:"i" }}</small></td>
+                                        {% endif %}
                                     {% endfor %}
-                                </tr>
+                                </small></tr>
                                 {% endfor %}
-                        {% endif %}
+                            {% endif %}    
+                            </tr>
                         </tbody>
                     </table>
                     </div>

@@ -69,8 +69,44 @@
             </div>
             {% endif %}
         </div>
-    </div>    
-</div>
+    </div>
+    {% if presentaciones_en_pr %}
+    <!-- Presentaciones abiertas -->
+    <div class="row justify-content-md-center">
+        <div class="col-8">
+            <div class="card top-selling overflow-auto">
+                <div class="card-body pb-0">
+                    <h5 class="card-title text-center">Presentaciones en proceso</h5>
+                    <table class="table table-borderless">
+                        <thead>
+                        <tr>
+                            <th scope="col" style="width: 30%" class="text-center">Período</th>
+                            <th scope="col" style="width: 55%" class="text-center">Empresa</th>
+                            <th scope="col" style="width: 15%"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for presentacion in presentaciones_en_pr %}
+                        <tr>
+                            <td class="text-center">{{ presentacion.periodo|date:"d/m/Y" }}</td>
+                            <td>{{ presentacion.empresa.name }}</td>
+                            <td>
+                                <a 
+                                  class="btn btn-outline-success btn-sm"
+                                  href="{% url 'export_lsd:advanced_liqs' username=presentacion.user periodo=presentacion.periodo_str cuit=presentacion.empresa.cuit %}"
+                                >
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- End Presentaciones abiertas -->
+        {% endif %}
+    </div>
 {% endblock content %}
 
 {% block footer_js %}

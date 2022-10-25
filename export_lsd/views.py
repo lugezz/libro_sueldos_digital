@@ -1,5 +1,7 @@
 import datetime
 
+import pandas as pd
+
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,6 +17,9 @@ from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, Liquidacio
 from export_lsd.tools.export_advanced_txt import get_summary_txtF931
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
+
+
+EXPORT_TITLES = ['Leg', 'Concepto', 'Cant', 'Monto', 'Tipo']
 
 
 # ------------- DASHBOARD ------------------------------------------------
@@ -388,6 +393,8 @@ def import_empleados(request):
 def advanced_export(request):
     # Debe tener al menos una empresa asociada
     empresas_qs = Empresa.objects.filter(user=request.user).order_by('name')
+    presentaciones_en_pr = Presentacion.objects.filter(user=request.user).order_by('-periodo')
+
     form = PeriodoForm(request.POST or None)
 
     if not empresas_qs:
@@ -397,6 +404,7 @@ def advanced_export(request):
     context = {
         'error': '',
         'form': form,
+        'presentaciones_en_pr': presentaciones_en_pr
     }
 
     if request.method == 'POST':
@@ -443,17 +451,39 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
         periodo_obj = periodo_obj.first()
 
     liquidaciones_qs = Liquidacion.objects.filter(presentacion=periodo_obj)
+    nro_liqs = list(liquidaciones_qs.values_list('nroLiq', flat=True))
+    nro_liqs_open = [x for x in range(1, 26) if x not in nro_liqs]
 
     context = {
         'liquidaciones': liquidaciones_qs,
         'periodo': periodo,
         'empresa': empresa.name,
         'form': form,
+        'nro_liqs_open': nro_liqs_open,
         'error': '',
     }
 
     if request.method == 'POST':
-        pass
+        # TODO: En el futuro agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
+        df_liq = pd.read_excel(request.FILES['xlsx_liq'])
+
+        # Validación 1 - Titulos
+        df_titles = list(df_liq.columns.values)
+        if df_titles[:5] != EXPORT_TITLES:
+            context['error'] = 'Error en el formato del archivo recibido, por favor chequear.'
+            return render(request, 'export_lsd/export/advanced_liqs.html', context)
+
+        # Validación 2 - Legajos
+        legajos_qs = Empleado.objects.filter(empresa=empresa)
+        legajos_db = set(list(legajos_qs.values_list('leg', flat=True)))
+
+        legajos = set(df_liq['Leg'].tolist())
+
+        legajos_dif = legajos.difference(legajos_db)
+        if legajos_dif:
+            legajos_dif_str = ', '.join(map(str, legajos_dif))
+            messages.error(request, f"Empleados {legajos_dif_str} no observados en {empresa.name}")
+            return redirect(reverse_lazy('export_lsd:empleado_list'))
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
