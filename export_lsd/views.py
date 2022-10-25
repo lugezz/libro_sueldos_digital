@@ -431,15 +431,16 @@ def advanced_export_liqs(request, periodo: str):
     per = periodo.split('_')
     username = per[0]
     cuit = per[1]
-    periodo = per[2][:4] + '-' + per[1][-2:] + '-01'
-    periodo_qs = Presentacion.objects.filter(user__username=username, empresa__cuit=cuit, periodo=periodo)
+    periodo = per[2][:4] + '-' + per[2][-2:] + '-01'
+    this_periodo = Presentacion.objects.get(user__username=username, empresa__cuit=cuit, periodo=periodo)
+    liquidaciones_qs = Liquidacion.objects.filter(presentacion=this_periodo)
 
-    if not periodo_qs:
-        messages.error(request, "No se ha creado esta liquidación")
+    if not this_periodo:
+        messages.error(request, "No se ha creado esta presentacion")
         return redirect(reverse_lazy('export_lsd:advanced'))
 
     context = {
-        'liquidaciones': periodo_qs,
+        'liquidaciones': liquidaciones_qs,
         'error': ''
     }
     print(context)

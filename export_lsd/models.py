@@ -134,10 +134,15 @@ class Presentacion(models.Model):
 
 
 class Liquidacion(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, unique=True)
     presentacion = models.ForeignKey(Presentacion, on_delete=models.CASCADE)
     employees = models.PositiveSmallIntegerField()
+    remuneracion = models.FloatField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f'{self.presentacion.empresa.name} - {self.presentacion.periodo.strftime("%Y/%m")} - Liq. {self.id}'
 
     class Meta:
         verbose_name_plural = 'Liquidaciones'
