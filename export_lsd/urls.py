@@ -39,7 +39,7 @@ urlpatterns = [
     path('basic/', basic_export, name='basic'),
     path('import-empleados/', import_empleados, name='import_empleados'),
     path('advanced/', advanced_export, name='advanced'),
-    path('advanced/liqs/<str:periodo>', advanced_export_liqs, name='advanced_liqs'),
+    path('advanced/liqs/<str:username>/<str:periodo>/<str:cuit>', advanced_export_liqs, name='advanced_liqs'),
     path('exportadb/', exportaDB),
     path('exportadb-f931/', exportaDB_f931),
     path('export_test/', export_txt),

@@ -112,8 +112,6 @@ class Presentacion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     periodo = models.DateField()
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
-    employees = models.PositiveSmallIntegerField(default=0)
-    remuneracion = models.FloatField(default=0.0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -134,18 +132,18 @@ class Presentacion(models.Model):
 
 
 class Liquidacion(models.Model):
-    id = models.PositiveSmallIntegerField(primary_key=True, unique=True)
+    nroLiq = models.PositiveSmallIntegerField(default=1)
     presentacion = models.ForeignKey(Presentacion, on_delete=models.CASCADE)
-    employees = models.PositiveSmallIntegerField()
-    remuneracion = models.FloatField()
+    payday = models.DateField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f'{self.presentacion.empresa.name} - {self.presentacion.periodo.strftime("%Y/%m")} - Liq. {self.id}'
+        return f'{self.presentacion.empresa.name} - {self.presentacion.periodo.strftime("%Y/%m")} - Liq. {self.nroLiq}'
 
     class Meta:
         verbose_name_plural = 'Liquidaciones'
+        unique_together = (('nroLiq', 'presentacion'),)
 
 
 class BasicExportConfig(models.Model):

@@ -20,27 +20,21 @@
     <form method="post" enctype="multipart/form-data" class="mb-3">
     {% csrf_token %}
     <div class="row">
+        <div class="col-12">
+            <p class="h1 text-center mb-5">{{ empresa }} - {{ periodo|slice:"-2:" }}/{{ periodo|slice:":4" }}</p>
+        </div>
         <div class="col-3">
             <!-- Fecha de pago -->
-            <div class="form-group mb-3"> 
-                <label class="control-label mb-1" for="date">Fecha de Pago</label>
-                <input class="form-control" id="payDay" name="payDay" placeholder="DD/MM/YYYY" type="text"/>
+            <div class="form-group mb-3">
+                <p class="mb-1">Fecha Pago</p>
+                {{ form.payday }}
             </div>
             <!-- Fin Fecha de pago -->
         </div>
 
         <div class="col-2">
-            <!-- Selección Empresa -->
-            <div class="form-group mb-3"> 
-                <p class="mb-1">Nro Liq.</p>
-                <select
-                    id="nroLiq"
-                    name="nroLiq"
-                    class="form-select mb-3"
-                    aria-label="Seleccione Nro Liquidación"
-                >
-                </select>
-            </div>
+            <p class="mb-1">Núm. Liq.</p>
+            {{ form.nroLiq }}
         </div>
 
         <div class="col-7">
@@ -76,20 +70,15 @@
                         </tr>
                         </thead>
                         <tbody>
+                        {% for liquidacion in liquidaciones %}
                         <tr>
-                            <td><a href="#" class="text-primary fw-bold">10</a></td>
-                            <td>13/10/2022</td>
-                            <td>Que lo que SRL</td>
-                            <td>4</td>
-                            <td>124</td>
+                            <td><a href="#" class="text-primary fw-bold">{{ liquidacion.nroLiq }}</a></td>
+                            <td>{{ liquidacion.payday|date:"d/m/Y" }}</td>
+                            <td>12</td>
+                            <td>$30.000</td>
+                            <td>$5.000</td>
                         </tr>
-                        <tr>
-                            <td><a href="#" class="text-primary fw-bold">10</a></td>
-                            <td>13/10/2022</td>
-                            <td>Que lo que SRL</td>
-                            <td>4</td>
-                            <td>124</td>
-                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -163,10 +152,6 @@
         });
     {% endif %}
 
-    $('#F931file').change(function() {
-        $('#F931form').submit();
-    });
-
     $(document).ready(
     function(){
         fillSelect()
@@ -177,14 +162,13 @@
         final_date = formatDate(lastDayPrevMonth)
         final_date_mth = formatDate(lastDayPrevMonth, true)
 
-        $('#payDay').val(final_date);
-        $('#perLiq').val(final_date_mth);
+        $('#id_payday').val(final_date);
 
         $("#buttonClose").on('click', function(event) {
             $(".alert-dismissible").remove()
         });
 
-        var date_input=$('input[name="payDay"]');
+        var date_input=$('#id_payday');
         var container=$('.bootstrap-iso form').length>0 ? $('.bootstrap-iso form').parent() : "body";
         var options={
           format: 'dd/mm/yyyy',

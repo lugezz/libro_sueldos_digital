@@ -6,12 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.http.response import JsonResponse
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
-from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, PeriodoForm
+from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, LiquidacionForm, PeriodoForm
 from export_lsd.tools.export_advanced_txt import get_summary_txtF931
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
@@ -22,7 +22,7 @@ class HomeView(TemplateView):
     template_name = 'export_lsd/home.html'
 
     def get_context_data(self, **kwargs):
-        query_historia = Liquidacion.objects.filter(empresa__user=self.request.user)
+        query_historia = Presentacion.objects.filter(empresa__user=self.request.user)
         today = datetime.date.today()
         last_month = today.replace(day=1) - datetime.timedelta(days=1)
         last_month_str = last_month.strftime("%Y-%m")
@@ -396,16 +396,17 @@ def advanced_export(request):
 
     context = {
         'error': '',
-        'form': form
+        'form': form,
     }
 
     if request.method == 'POST':
+        id_empresa = request.POST.get("empresa")
+        cuit = Empresa.objects.get(id=id_empresa).cuit
+        per_liq = request.POST.get("periodo").replace('-', '')
         # Txt F931 subido
         if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
             fs = FileSystemStorage()
-            cuit = request.POST.get("selectEmpresa")
-            per_liq = request.POST.get("periodo").replace('-', '')
             fname = f'temptxt_{request.user.username}_{cuit}_{per_liq}.txt'
             fpath = f'export_lsd/static/temp/{fname}'
             fs.delete(fpath)
@@ -419,31 +420,37 @@ def advanced_export(request):
 
         # Procesar nomás
         else:
-            # TODO: Grabar presentación, borrar primero por si hay un registro anterior
-            return redirect(reverse_lazy('export_lsd:advanced_liqs', args=['lugezz_30123456781_198001']))
+            return redirect(reverse('export_lsd:advanced_liqs',  kwargs={
+                'username': request.user.username,
+                'periodo': per_liq,
+                'cuit': cuit
+            }))
 
     return render(request, 'export_lsd/export/advanced.html', context)
 
 
 @login_required
-def advanced_export_liqs(request, periodo: str):
-    # Debe estar vinculada a un período de una empresa - Formato cuit_yyyymm
-    per = periodo.split('_')
-    username = per[0]
-    cuit = per[1]
-    periodo = per[2][:4] + '-' + per[2][-2:] + '-01'
-    this_periodo = Presentacion.objects.get(user__username=username, empresa__cuit=cuit, periodo=periodo)
-    liquidaciones_qs = Liquidacion.objects.filter(presentacion=this_periodo)
+def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
+    form = LiquidacionForm(request.POST or None)
 
-    if not this_periodo:
-        messages.error(request, "No se ha creado esta presentacion")
-        return redirect(reverse_lazy('export_lsd:advanced'))
+    periodo_for = periodo[:4] + "-" + periodo[-2:] + "-01"
+    periodo_obj = Presentacion.objects.filter(user__username=username, empresa__cuit=cuit, periodo=periodo_for)
+    empresa = Empresa.objects.get(cuit=cuit, user=request.user)
+
+    if not periodo_obj:
+        periodo_obj = Presentacion.objects.create(empresa=empresa, periodo=periodo_for)
+    else:
+        periodo_obj = periodo_obj.first()
+
+    liquidaciones_qs = Liquidacion.objects.filter(presentacion=periodo_obj)
 
     context = {
         'liquidaciones': liquidaciones_qs,
-        'error': ''
+        'periodo': periodo,
+        'empresa': empresa.name,
+        'form': form,
+        'error': '',
     }
-    print(context)
 
     if request.method == 'POST':
         pass

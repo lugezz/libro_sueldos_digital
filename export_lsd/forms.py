@@ -1,8 +1,8 @@
-from django.forms import (DateInput, Field, FileField, FileInput,
+from django.forms import (DateField, DateInput, Field, FileField, FileInput,
                           ModelForm, Select, TextInput,
                           ValidationError)
 
-from export_lsd.models import BasicExportConfig, Empresa, Empleado, Presentacion
+from export_lsd.models import BasicExportConfig, Empresa, Empleado, Liquidacion, Presentacion
 from export_lsd.tools.import_empleados import is_positive_number
 
 
@@ -127,7 +127,6 @@ class PeriodoForm(ModelForm):
         widgets = {
             'empresa': Select(
                 attrs={
-                    'placeholder': "Ingrese el nombre de empresa",
                     'class': "form-select mb-3"
                 }
             ),
@@ -151,3 +150,35 @@ class PeriodoForm(ModelForm):
         except Exception as e:
             data['error'] = str(e)
         return data
+
+
+class LiquidacionForm(ModelForm):
+    nroLiq = Select()
+    xlsx_liq = FileField(
+        widget=FileInput(
+            attrs={
+                'class': 'form-control mb-3'
+            }),
+        label='Seleccione planilla liquidación')
+
+    payday = DateField(
+        widget=DateInput(
+            format="%d/%m/%Y",
+            attrs={
+                'placeholder': "DD/MM/YYYY",
+                'class': "datepicker form-select mb-3"
+            }),
+        )
+
+    class Meta:
+        model = Liquidacion
+
+        fields = ['payday', 'nroLiq', 'xlsx_liq']
+
+        widgets = {
+            'nroLiq': Select(
+                attrs={
+                    'class': "form-select mb-3"
+                }
+            ),
+        }
