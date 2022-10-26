@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.http.response import JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
@@ -458,6 +458,9 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
         'liquidaciones': liquidaciones_qs,
         'periodo': periodo,
         'empresa': empresa.name,
+        'empleados': periodo_obj.employees,
+        'remunerativos': periodo_obj.remunerativos,
+        'no_remunerativos': periodo_obj.no_remunerativos,
         'form': form,
         'nro_liqs_open': nro_liqs_open,
         'error': '',
@@ -485,7 +488,34 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
             messages.error(request, f"Empleados {legajos_dif_str} no observados en {empresa.name}")
             return redirect(reverse_lazy('export_lsd:empleado_list'))
 
+        # Procesar la Liquidación
+
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
+
+
+class PresentacionDeleteView(LoginRequiredMixin, DeleteView):
+    model = Presentacion
+    template_name = 'export_lsd/export/delete.html'
+    success_url = reverse_lazy('export_lsd:advanced')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Eliminación de una Presentación'
+        context['entity'] = 'Presentaciones'
+        context['list_url'] = reverse_lazy('export_lsd:advanced')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            self.object.delete()
+        except Exception as e:
+            data['error'] = str(e)
+        return JsonResponse(data)
 
 
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------

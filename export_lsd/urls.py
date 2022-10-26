@@ -2,7 +2,7 @@ from django.urls import path
 
 from export_lsd.tools.export_db import exportaDB, exportaDB_f931
 from export_lsd.tools.export_basic_txt import export_txt
-from export_lsd.views import (advanced_export, advanced_export_liqs, basic_export,
+from export_lsd.views import (PresentacionDeleteView, advanced_export, advanced_export_liqs, basic_export,
                               import_empleados, HomeView,
                               ConfigEBCreateView, ConfigEBDeleteView, ConfigEBListView,
                               ConfigEBUpdateView,
@@ -35,11 +35,16 @@ urlpatterns = [
     path('config-eb/update/<int:pk>/', ConfigEBUpdateView.as_view(), name='config_eb_update'),
     path('config-eb/delete/<int:pk>/', ConfigEBDeleteView.as_view(), name='config_eb_delete'),
 
-    # Accesos
+    # Exportaciones
     path('basic/', basic_export, name='basic'),
     path('import-empleados/', import_empleados, name='import_empleados'),
+
+    # --- Advanced
     path('advanced/', advanced_export, name='advanced'),
     path('advanced/liqs/<str:username>/<str:periodo>/<str:cuit>', advanced_export_liqs, name='advanced_liqs'),
+    path('advanced/delete/<int:pk>', PresentacionDeleteView.as_view(), name='advanced_delete'),
+
+    # Actualizaciones BD
     path('exportadb/', exportaDB),
     path('exportadb-f931/', exportaDB_f931),
     path('export_test/', export_txt),

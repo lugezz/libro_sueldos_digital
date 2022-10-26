@@ -92,6 +92,12 @@
                             <td>{{ presentacion.empresa.name }}</td>
                             <td>
                                 <a 
+                                  class="btn btn-outline-danger btn-sm" id="btn_delete_advanced"
+                                  href="{% url 'export_lsd:advanced_delete' pk=presentacion.id %}"
+                                >
+                                  <i class="fa-solid fa-trash"></i>
+                                </a>
+                                <a 
                                   class="btn btn-outline-success btn-sm"
                                   href="{% url 'export_lsd:advanced_liqs' username=presentacion.user periodo=presentacion.periodo_str cuit=presentacion.empresa.cuit %}"
                                 >
@@ -144,6 +150,36 @@
         });
     {% endif %}
 
+    $('#btn_delete_advanced').on('click', function (e) {
+        e.preventDefault();
+        $.confirm({
+            theme: 'material',
+            title: 'Notificación',
+            icon: 'fa fa-info',
+            content: '¿Estas seguro de eliminar el registro?<br>',
+            columnClass: 'small',
+            typeAnimated: true,
+            cancelButtonClass: 'btn-primary',
+            draggable: true,
+            dragWindowBorder: false,
+            buttons: {
+                info: {
+                    text: "Si",
+                    btnClass: 'btn-primary',
+                    action: function() {
+                        $('form').submit();
+                    }
+                },
+                danger: {
+                    text: "No",
+                    btnClass: 'btn-red',
+                    action: function() {
+                    }
+                },
+            }
+        })
+    });
+
     $('.button_submit').on('click', function (e) {
         e.preventDefault();
         $.confirm({
@@ -161,7 +197,6 @@
                     text: "Si",
                     btnClass: 'btn-primary',
                     action: function() {
-                        console.log('Acepté')
                         $('form').submit();
                     }
                 },

@@ -45,8 +45,13 @@
             </a>
         </div>
         <div class="col-12 text-center">
-            <button class="btn btn-primary btn-flat my-3 button_submit">
-                <i class="fa-solid fa-arrow-right-from-arc"></i> Procesar
+            <a class="btn btn-primary btn-flat my-3 button_submit"
+               href="{% url 'export_lsd:advanced' %}"
+            >
+                <i class="fa-solid fa-arrow-left"></i> Regresar
+            </a>
+            <button class="btn btn-success btn-flat my-3 button_submit">
+                <i class="fa-solid fa-check-double"></i> Procesar
             </button>
         </div>
     </div>
@@ -62,21 +67,21 @@
                     <table class="table table-borderless">
                         <thead>
                         <tr>
-                            <th scope="col">Nro</th>
-                            <th scope="col">Fecha</th>
-                            <th scope="col">Empleados</th>
-                            <th scope="col">Remunerativos</th>
-                            <th scope="col">No Remun.</th>
+                            <th scope="col" class="text-center">Nro</th>
+                            <th scope="col" class="text-center">Fecha</th>
+                            <th scope="col" class="text-center">Empleados</th>
+                            <th scope="col" class="text-center">Remunerativos</th>
+                            <th scope="col" class="text-center">No Remun.</th>
                         </tr>
                         </thead>
                         <tbody>
                         {% for liquidacion in liquidaciones %}
                         <tr>
                             <td><a href="#" class="text-primary fw-bold">{{ liquidacion.nroLiq }}</a></td>
-                            <td>{{ liquidacion.payday|date:"d/m/Y" }}</td>
-                            <td>12</td>
-                            <td>$30.000</td>
-                            <td>$5.000</td>
+                            <td class="text-center">{{ liquidacion.payday|date:"d/m/Y" }}</td>
+                            <td class="text-center">{{ liquidacion.employees }}</td>
+                            <td class="text-end">${{ liquidacion.remunerativos|floatformat:2|localize }}</td>
+                            <td class="text-end">${{ liquidacion.no_remunerativos|floatformat:2|localize }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -89,13 +94,13 @@
                 <h5 id="configTitle" class="card-title text-center">Resumen</h5>
                 <ul id="detLiqs">
                     <li class="list-group-item text-info">
-                        <small><b>Empleados:</b> 0</small>
+                        <small><b>Empleados: </b>{{ empleados }}</small>
                     </li>
                     <li class="list-group-item text-info">
-                        <small><b>Remunerativos:</b>$1012021.0</small>
+                        <small><b>Remunerativos: </b>${{ remunerativos|floatformat:2|localize }}</small>
                     </li>
                     <li class="list-group-item text-info">
-                        <small><b>No Remunerativos:</b> 0</small>
+                        <small><b>No Remunerativos: </b>${{ no_remunerativos|floatformat:2|localize }}</small>
                     </li>
                 </ul>
             </div>

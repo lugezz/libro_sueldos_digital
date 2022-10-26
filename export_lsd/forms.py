@@ -168,7 +168,7 @@ class LiquidacionForm(ModelForm):
             format="%d/%m/%Y",
             attrs={
                 'placeholder': "DD/MM/YYYY",
-                'class': "datepicker form-select mb-3"
+                'class': "datepicker form-select mb-3 text-center"
             }),
         )
 
