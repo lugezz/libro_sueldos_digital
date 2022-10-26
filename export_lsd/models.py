@@ -165,7 +165,7 @@ class ConceptoLiquidacion(models.Model):
     importe = models.FloatField(default=0)
 
     def __str__(self) -> str:
-        return f'{self.empleado.legajo} - {self.concepto} - $ {self.importe}'
+        return f'Leg.{self.empleado.leg} - Conc:{self.concepto} - $ {self.importe}'
 
     class Meta:
         verbose_name_plural = 'ConceptoLiquidaciones'

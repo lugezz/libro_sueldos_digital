@@ -14,7 +14,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, LiquidacionForm, PeriodoForm
-from export_lsd.tools.export_advanced_txt import get_summary_txtF931
+from export_lsd.tools.export_advanced_txt import get_summary_txtF931, process_liquidacion
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
 
@@ -450,6 +450,7 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
     else:
         periodo_obj = periodo_obj.first()
 
+    id_presentacion = periodo_obj.id
     liquidaciones_qs = Liquidacion.objects.filter(presentacion=periodo_obj)
     nro_liqs = list(liquidaciones_qs.values_list('nroLiq', flat=True))
     nro_liqs_open = [x for x in range(1, 26) if x not in nro_liqs]
@@ -469,6 +470,8 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
     if request.method == 'POST':
         # TODO: En el futuro agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
         df_liq = pd.read_excel(request.FILES['xlsx_liq'])
+        nro_liq = request.POST['nroLiq']
+        payday = datetime.datetime.strptime(request.POST['payday'], '%d/%m/%Y')
 
         # Validación 1 - Titulos
         df_titles = list(df_liq.columns.values)
@@ -489,6 +492,9 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
             return redirect(reverse_lazy('export_lsd:empleado_list'))
 
         # Procesar la Liquidación
+        result = process_liquidacion(id_presentacion, nro_liq, payday, df_liq)
+
+        print(result)
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
 

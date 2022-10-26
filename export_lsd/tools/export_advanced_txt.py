@@ -1,5 +1,3 @@
-# TODO: Step by step
-
 """
 1) Export Legajos
 2) Export F.931 para datos de nómina y situación revista
@@ -8,6 +6,10 @@
 """
 
 
+import datetime
+
+from pandas import DataFrame
+from export_lsd.models import BulkCreateManager, ConceptoLiquidacion, Empleado, Liquidacion, Presentacion
 from export_lsd.utils import amount_txt_to_float, get_value_from_txt, NOT_SIJP
 
 
@@ -49,5 +51,40 @@ def get_summary_txtF931(txt_file) -> dict:
             result['Eventuales'] += 1
         else:
             result['Empleados'] += 1
+
+    return result
+
+
+def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
+    result = {
+        'empleados': len(set(df_liq['Leg'].tolist())),
+        'remunerativos': 0.0,
+        'no_remunerativos': 0.0,
+    }
+    bulk_mgr = BulkCreateManager()
+    presentacion = Presentacion.objects.get(id=id_presentacion)
+    payday_str = payday.strftime('%Y-%m-%d')
+    empresa = presentacion.empresa
+    liquidacion = Liquidacion.objects.create(nroLiq=nro_liq, presentacion=presentacion, payday=payday_str)
+
+    for index, row in df_liq.iterrows():
+        empleado = Empleado.objects.get(leg=row["Leg"], empresa=empresa)
+
+        if row['Tipo'] == 'Rem':
+            result['remunerativos'] += float(row['Monto'])
+
+        if row['Tipo'] == 'NR':
+            result['no_remunerativos'] += float(row['Monto'])
+
+        bulk_mgr.add(ConceptoLiquidacion(liquidacion=liquidacion,
+                                         empleado=empleado,
+                                         concepto=row['Concepto'],
+                                         cantidad=row['Cant'],
+                                         importe=row['Monto']))
+    bulk_mgr.done()
+    liquidacion.employees = result['empleados']
+    liquidacion.remunerativos = result['remunerativos']
+    liquidacion.no_remunerativos = result['no_remunerativos']
+    liquidacion.save()
 
     return result
