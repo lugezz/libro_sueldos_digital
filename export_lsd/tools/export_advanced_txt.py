@@ -56,8 +56,10 @@ def get_summary_txtF931(txt_file) -> dict:
 
 
 def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
+    empleados = set(df_liq['Leg'].tolist())
+    
     result = {
-        'empleados': len(set(df_liq['Leg'].tolist())),
+        'empleados': len(empleados),
         'remunerativos': 0.0,
         'no_remunerativos': 0.0,
     }
@@ -82,9 +84,23 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
                                          cantidad=row['Cant'],
                                          importe=row['Monto']))
     bulk_mgr.done()
+
+    # Update Liquidación
     liquidacion.employees = result['empleados']
     liquidacion.remunerativos = result['remunerativos']
     liquidacion.no_remunerativos = result['no_remunerativos']
     liquidacion.save()
+
+    # Update Presentación
+    presentacion.remunerativos += result['remunerativos']
+    presentacion.no_remunerativos += result['no_remunerativos']
+    liquidaciones = presentacion.objects.filter(presentacion=presentacion)
+
+    for liq in liquidaciones:
+        conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion=liq)
+        for conc_liq in conc_liqs:
+            empleados.add(conc_liq['empleado'].leg)
+
+
 
     return result
