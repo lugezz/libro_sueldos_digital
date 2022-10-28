@@ -412,6 +412,7 @@ def advanced_export(request):
         cuit = Empresa.objects.get(id=id_empresa).cuit
         per_liq = request.POST.get("periodo").replace('-', '')
         # Txt F931 subido
+        # TODO: Check que no se graba
         if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
             fs = FileSystemStorage()
