@@ -57,7 +57,7 @@ def get_summary_txtF931(txt_file) -> dict:
 
 def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
     empleados = set(df_liq['Leg'].tolist())
-    
+
     result = {
         'empleados': len(empleados),
         'remunerativos': 0.0,
