@@ -63,6 +63,7 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
         'remunerativos': 0.0,
         'no_remunerativos': 0.0,
     }
+
     bulk_mgr = BulkCreateManager()
     presentacion = Presentacion.objects.get(id=id_presentacion)
     payday_str = payday.strftime('%Y-%m-%d')
@@ -94,13 +95,19 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
     # Update Presentación
     presentacion.remunerativos += result['remunerativos']
     presentacion.no_remunerativos += result['no_remunerativos']
-    liquidaciones = presentacion.objects.filter(presentacion=presentacion)
+    liquidaciones = Liquidacion.objects.filter(presentacion=presentacion).exclude(nroLiq=nro_liq)
 
     for liq in liquidaciones:
         conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion=liq)
-        for conc_liq in conc_liqs:
-            empleados.add(conc_liq['empleado'].leg)
+        if conc_liqs:
+            for conc_liq in conc_liqs:
+                empleados.add(conc_liq.empleado.leg)
 
+    presentacion.employees = len(empleados)
+    presentacion.save()
 
+    result['empleados'] = presentacion.employees
+    result['remunerativos'] = presentacion.remunerativos
+    result['no_remunerativos'] = presentacion.no_remunerativos
 
     return result

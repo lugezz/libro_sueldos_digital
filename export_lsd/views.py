@@ -494,8 +494,9 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
 
         # Procesar la Liquidación
         result = process_liquidacion(id_presentacion, nro_liq, payday, df_liq)
-
-        print(result)
+        context['empleados'] = result.get('empleados', 0)
+        context['remunerativos'] = result.get('remunerativos', 0)
+        context['no_remunerativos'] = result.get('no_remunerativos', 0)
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
