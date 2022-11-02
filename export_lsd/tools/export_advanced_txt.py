@@ -51,7 +51,6 @@ def get_summary_txtF931(txt_file) -> dict:
             result['Eventuales'] += 1
         else:
             result['Empleados'] += 1
-
     return result
 
 

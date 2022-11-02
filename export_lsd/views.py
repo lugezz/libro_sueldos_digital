@@ -393,13 +393,13 @@ def import_empleados(request):
 def advanced_export(request):
     # Debe tener al menos una empresa asociada
     empresas_qs = Empresa.objects.filter(user=request.user).order_by('name')
-    presentaciones_en_pr = Presentacion.objects.filter(user=request.user).order_by('-periodo')
-
-    form = PeriodoForm(request.POST or None)
 
     if not empresas_qs:
         messages.error(request, "Debe tener al menos asociada una empresa")
         return redirect(reverse_lazy('export_lsd:empresa_list'))
+
+    presentaciones_en_pr = Presentacion.objects.filter(user=request.user).order_by('-periodo')
+    form = PeriodoForm(request.POST or None)
 
     context = {
         'error': '',
@@ -412,7 +412,6 @@ def advanced_export(request):
         cuit = Empresa.objects.get(id=id_empresa).cuit
         per_liq = request.POST.get("periodo").replace('-', '')
         # Txt F931 subido
-        # TODO: Check que no se graba
         if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
             fs = FileSystemStorage()
@@ -457,6 +456,7 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
     nro_liqs_open = [x for x in range(1, 26) if x not in nro_liqs]
 
     context = {
+        'id_presentacion': id_presentacion,
         'liquidaciones': liquidaciones_qs,
         'periodo': periodo,
         'empresa': empresa.name,
@@ -497,8 +497,45 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
         context['empleados'] = result.get('empleados', 0)
         context['remunerativos'] = result.get('remunerativos', 0)
         context['no_remunerativos'] = result.get('no_remunerativos', 0)
+        context['nro_liqs_open'].remove(int(nro_liq))
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
+
+
+def get_final_txts(request, pk: int):
+    presentacion_qs = Presentacion.objects.get(id=pk)
+    cuit = presentacion_qs.empresa.cuit
+
+    per_liq = presentacion_qs.periodo.strftime('%Y%m')
+    fname = f'temptxt_{request.user.username}_{cuit}_{per_liq}.txt'
+    fpath = f'export_lsd/static/temp/{fname}'
+    info_txt = get_summary_txtF931(fpath)
+
+    # 1) Valido empleados
+    if presentacion_qs.employees != info_txt['Empleados']:
+        mensaje = f'Empleados en txt: {info_txt["Empleados"]}. '
+        mensaje += f'Empleados en liquidaciones: {presentacion_qs.employees}. '
+        mensaje += 'Por favor corrija esta situación'
+        messages.error(request, mensaje)
+        return redirect(reverse_lazy('export_lsd:advanced_liqs', kwargs={
+                'username': request.user.username,
+                'periodo': per_liq,
+                'cuit': cuit
+            }))
+
+    # 2) Valido remuneración
+    if presentacion_qs.remunerativos != info_txt['Remuneración 2']:
+        mensaje = f'Remuneración en txt: $ {info_txt["Remuneración 2"]:.2f}. '
+        mensaje += f'Remuneración en liquidaciones: $ {presentacion_qs.remunerativos:.2f}. '
+        mensaje += 'Por favor corrija esta situación'
+        messages.error(request, mensaje)
+        return redirect(reverse_lazy('export_lsd:advanced_liqs', kwargs={
+                'username': request.user.username,
+                'periodo': per_liq,
+                'cuit': cuit
+            }))
+
+    return redirect(reverse_lazy('export_lsd:home'))
 
 
 class PresentacionDeleteView(LoginRequiredMixin, DeleteView):

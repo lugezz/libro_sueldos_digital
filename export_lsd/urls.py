@@ -3,7 +3,7 @@ from django.urls import path
 from export_lsd.tools.export_db import exportaDB, exportaDB_f931
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.views import (PresentacionDeleteView, advanced_export, advanced_export_liqs, basic_export,
-                              import_empleados, HomeView,
+                              get_final_txts, import_empleados, HomeView,
                               ConfigEBCreateView, ConfigEBDeleteView, ConfigEBListView,
                               ConfigEBUpdateView,
                               EmpleadoCreateView, EmpleadoDeleteView, EmpleadoListView,
@@ -42,6 +42,7 @@ urlpatterns = [
     # --- Advanced
     path('advanced/', advanced_export, name='advanced'),
     path('advanced/liqs/<str:username>/<str:periodo>/<str:cuit>', advanced_export_liqs, name='advanced_liqs'),
+    path('advanced/get-txts/<int:pk>', get_final_txts, name='advanced_get_txt'),
     path('advanced/delete/<int:pk>', PresentacionDeleteView.as_view(), name='advanced_delete'),
 
     # Actualizaciones BD
