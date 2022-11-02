@@ -88,14 +88,16 @@
                     </table>
                 </div>
             </div>
-            <div class="col-12 text-center">
-                <a class="btn btn-success btn-flat"
-                    href="{% url 'export_lsd:advanced_get_txt' id_presentacion %}"
-                    id="generarArchivos"
-                    >
-                    <i class="fa-solid fa-download"></i> Generar archivos
-                </a>
-            </div>
+            {% if liquidaciones %}
+                <div class="col-12 text-center">
+                    <a class="btn btn-success btn-flat"
+                        href="{% url 'export_lsd:advanced_get_txt' id_presentacion %}"
+                        id="generarArchivos"
+                        >
+                        <i class="fa-solid fa-download"></i> Generar archivos
+                    </a>
+                </div>
+            {% endif %}
         </div><!-- End Detalle Liquidaciones -->
         <div class="col-4"> 
             <div class="card top-selling overflow-auto">

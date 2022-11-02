@@ -14,7 +14,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, LiquidacionForm, PeriodoForm
-from export_lsd.tools.export_advanced_txt import get_summary_txtF931, process_liquidacion
+from export_lsd.tools.export_advanced_txt import get_summary_txtF931, process_liquidacion, process_presentacion
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
 
@@ -501,6 +501,8 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
+    # TODO: Agregar el borrado de liquidaciones
+
 
 def get_final_txts(request, pk: int):
     presentacion_qs = Presentacion.objects.get(id=pk)
@@ -534,6 +536,11 @@ def get_final_txts(request, pk: int):
                 'periodo': per_liq,
                 'cuit': cuit
             }))
+
+    # Listo vamos con el procesamiento
+    list_of_txt = process_presentacion(id_pres=pk, txt_f931=fpath)
+
+    # TODO: Procesar las liquidaciones, generar un zip con todas las liquidaciones
 
     return redirect(reverse_lazy('export_lsd:home'))
 

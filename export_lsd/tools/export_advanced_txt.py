@@ -7,13 +7,14 @@
 
 
 import datetime
+from pathlib import Path
 
 from pandas import DataFrame
 from export_lsd.models import BulkCreateManager, ConceptoLiquidacion, Empleado, Liquidacion, Presentacion
 from export_lsd.utils import amount_txt_to_float, get_value_from_txt, NOT_SIJP
 
 
-def get_summary_txtF931(txt_file) -> dict:
+def get_summary_txtF931(txt_file: Path) -> dict:
     result = {
         'Empleados': 0,
         'Eventuales': 0,
@@ -110,3 +111,9 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
     result['no_remunerativos'] = presentacion.no_remunerativos
 
     return result
+
+
+def process_presentacion(id_pres: int, txt_f931: Path) -> Path:
+    # Devuelve el path del archivo comprimido con todas las liquidaciones en txt
+
+    pass
