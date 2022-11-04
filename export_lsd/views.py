@@ -14,7 +14,7 @@ from django.views.generic.base import TemplateView
 
 from export_lsd.models import BasicExportConfig, BulkCreateManager, Empleado, Empresa, Liquidacion, Presentacion
 from export_lsd.forms import ConfigEBForm, EmpresaForm, EmpleadoForm, LiquidacionForm, PeriodoForm
-from export_lsd.tools.export_advanced_txt import get_summary_txtF931, process_liquidacion, process_presentacion
+from export_lsd.tools.export_advanced_txt import get_final_txts, get_summary_txtF931, process_liquidacion
 from export_lsd.tools.export_basic_txt import export_txt
 from export_lsd.tools.import_empleados import get_employees
 
@@ -469,80 +469,50 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
     }
 
     if request.method == 'POST':
-        # TODO: En el futuro agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
-        df_liq = pd.read_excel(request.FILES['xlsx_liq'])
-        nro_liq = request.POST['nroLiq']
-        payday = datetime.datetime.strptime(request.POST['payday'], '%d/%m/%Y')
+        if 'get-txts' in request.POST:
+            # Clic en descargar archivo
+            path_txts = get_final_txts(request.user, id_presentacion)
 
-        # Validación 1 - Titulos
-        df_titles = list(df_liq.columns.values)
-        if df_titles[:5] != EXPORT_TITLES:
-            context['error'] = 'Error en el formato del archivo recibido, por favor chequear.'
-            return render(request, 'export_lsd/export/advanced_liqs.html', context)
+            if 'error' in path_txts:
+                messages.error(request, path_txts['error'])
+            else:
+                messages.success(request, "Proceso exitoso, archivo listo para la descarga")
+                context['path_txts'] = path_txts['path']
 
-        # Validación 2 - Legajos
-        legajos_qs = Empleado.objects.filter(empresa=empresa)
-        legajos_db = set(list(legajos_qs.values_list('leg', flat=True)))
+        else:
+            # TODO: En el futuro agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
+            df_liq = pd.read_excel(request.FILES['xlsx_liq'])
+            nro_liq = request.POST['nroLiq']
+            payday = datetime.datetime.strptime(request.POST['payday'], '%d/%m/%Y')
 
-        legajos = set(df_liq['Leg'].tolist())
+            # Validación 1 - Titulos
+            df_titles = list(df_liq.columns.values)
+            if df_titles[:5] != EXPORT_TITLES:
+                context['error'] = 'Error en el formato del archivo recibido, por favor chequear.'
+                return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
-        legajos_dif = legajos.difference(legajos_db)
-        if legajos_dif:
-            legajos_dif_str = ', '.join(map(str, legajos_dif))
-            messages.error(request, f"Empleados {legajos_dif_str} no observados en {empresa.name}")
-            return redirect(reverse_lazy('export_lsd:empleado_list'))
+            # Validación 2 - Legajos
+            legajos_qs = Empleado.objects.filter(empresa=empresa)
+            legajos_db = set(list(legajos_qs.values_list('leg', flat=True)))
 
-        # Procesar la Liquidación
-        result = process_liquidacion(id_presentacion, nro_liq, payday, df_liq)
-        context['empleados'] = result.get('empleados', 0)
-        context['remunerativos'] = result.get('remunerativos', 0)
-        context['no_remunerativos'] = result.get('no_remunerativos', 0)
-        context['nro_liqs_open'].remove(int(nro_liq))
+            legajos = set(df_liq['Leg'].tolist())
+
+            legajos_dif = legajos.difference(legajos_db)
+            if legajos_dif:
+                legajos_dif_str = ', '.join(map(str, legajos_dif))
+                messages.error(request, f"Empleados {legajos_dif_str} no observados en {empresa.name}")
+                return redirect(reverse_lazy('export_lsd:empleado_list'))
+
+            # Procesar la Liquidación
+            result = process_liquidacion(id_presentacion, nro_liq, payday, df_liq)
+            context['empleados'] = result.get('empleados', 0)
+            context['remunerativos'] = result.get('remunerativos', 0)
+            context['no_remunerativos'] = result.get('no_remunerativos', 0)
+            context['nro_liqs_open'].remove(int(nro_liq))
 
     return render(request, 'export_lsd/export/advanced_liqs.html', context)
 
     # TODO: Agregar el borrado de liquidaciones
-
-
-def get_final_txts(request, pk: int):
-    presentacion_qs = Presentacion.objects.get(id=pk)
-    cuit = presentacion_qs.empresa.cuit
-
-    per_liq = presentacion_qs.periodo.strftime('%Y%m')
-    fname = f'temptxt_{request.user.username}_{cuit}_{per_liq}.txt'
-    fpath = f'export_lsd/static/temp/{fname}'
-    info_txt = get_summary_txtF931(fpath)
-
-    # 1) Valido empleados
-    if presentacion_qs.employees != info_txt['Empleados']:
-        mensaje = f'Empleados en txt: {info_txt["Empleados"]}. '
-        mensaje += f'Empleados en liquidaciones: {presentacion_qs.employees}. '
-        mensaje += 'Por favor corrija esta situación'
-        messages.error(request, mensaje)
-        return redirect(reverse_lazy('export_lsd:advanced_liqs', kwargs={
-                'username': request.user.username,
-                'periodo': per_liq,
-                'cuit': cuit
-            }))
-
-    # 2) Valido remuneración
-    if presentacion_qs.remunerativos != info_txt['Remuneración 2']:
-        mensaje = f'Remuneración en txt: $ {info_txt["Remuneración 2"]:.2f}. '
-        mensaje += f'Remuneración en liquidaciones: $ {presentacion_qs.remunerativos:.2f}. '
-        mensaje += 'Por favor corrija esta situación'
-        messages.error(request, mensaje)
-        return redirect(reverse_lazy('export_lsd:advanced_liqs', kwargs={
-                'username': request.user.username,
-                'periodo': per_liq,
-                'cuit': cuit
-            }))
-
-    # Listo vamos con el procesamiento
-    list_of_txt = process_presentacion(id_pres=pk, txt_f931=fpath)
-
-    # TODO: Procesar las liquidaciones, generar un zip con todas las liquidaciones
-
-    return redirect(reverse_lazy('export_lsd:home'))
 
 
 class PresentacionDeleteView(LoginRequiredMixin, DeleteView):
