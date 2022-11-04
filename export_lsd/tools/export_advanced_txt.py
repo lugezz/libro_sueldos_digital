@@ -10,11 +10,16 @@ import datetime
 import os
 from pathlib import Path
 
+from django.db.models.query import QuerySet
 from django.utils.functional import SimpleLazyObject
 from pandas import DataFrame
 
-from export_lsd.models import BulkCreateManager, ConceptoLiquidacion, Empleado, Liquidacion, Presentacion
-from export_lsd.utils import amount_txt_to_float, get_value_from_txt, NOT_SIJP
+from export_lsd.models import (BulkCreateManager, ConceptoLiquidacion,
+                               Empleado, Liquidacion,
+                               OrdenRegistro, Presentacion)
+from export_lsd.utils import (amount_txt_to_integer, amount_txt_to_float,
+                              get_value_from_txt, NOT_SIJP,
+                              sync_format)
 
 
 def get_summary_txtF931(txt_file: Path) -> dict:
@@ -82,11 +87,13 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
         if row['Tipo'] == 'NR':
             result['no_remunerativos'] += float(row['Monto'])
 
+        importe = -row['Monto'] if row['Tipo'] == 'Ap' else row['Monto']
+
         bulk_mgr.add(ConceptoLiquidacion(liquidacion=liquidacion,
                                          empleado=empleado,
                                          concepto=row['Concepto'],
                                          cantidad=row['Cant'],
-                                         importe=row['Monto']))
+                                         importe=importe))
     bulk_mgr.done()
 
     # Update Liquidación
@@ -116,7 +123,7 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
     return result
 
 
-def process_reg1(cuit: str, pay_day: datetime.date, employees: int) -> str:
+def process_reg1(cuit: str, periodo: datetime.date, employees: int, nro_liq: int) -> str:
     """
     Identificacion del tipo de registro	2	1	2	Alfabético
     CUIT del empleador	11	3	13	Numérico
@@ -129,9 +136,10 @@ def process_reg1(cuit: str, pay_day: datetime.date, employees: int) -> str:
     """
 
     resp = f'01{cuit}SJ'
-    resp += pay_day.strftime('%Y%m')
+    resp += periodo
     # TODO: Configurar 'M'=mes; 'Q'=quincena; 'S'=semanal
-    resp += 'M00001'
+    resp += 'M'
+    resp += str(nro_liq).zfill(5)
 
     # TODO: Configurar
     ds_base = 30
@@ -140,7 +148,7 @@ def process_reg1(cuit: str, pay_day: datetime.date, employees: int) -> str:
     return resp
 
 
-def process_reg2(txt_info: str, payday: datetime.date, cuit: str) -> str:
+def process_reg2(leg_liqs: QuerySet, payday: datetime.date, cuit: str) -> str:
     """
     Identificacion del tipo de registro	2	1	2
     CUIL del trabajador	11	3	13
@@ -153,9 +161,10 @@ def process_reg2(txt_info: str, payday: datetime.date, cuit: str) -> str:
     Forma de pago	1	115	115
     """
     resp = []
-    for legajo in txt_info:
-        cuil = get_value_from_txt(legajo, 'CUIL')
-        leg = Empleado.objects.filter(empresa__cuit=cuit, cuil=cuil).first().leg
+    for id_legajo in leg_liqs:
+        empleado = Empleado.objects.get(id=id_legajo['empleado'])
+        cuil = empleado.cuil
+        leg = str(empleado.leg).zfill(10)
         # TODO: Configurar area en empleado
         area = 'Principal'.ljust(50)
         fecha_pago = payday.strftime('%Y%m%d')
@@ -164,13 +173,118 @@ def process_reg2(txt_info: str, payday: datetime.date, cuit: str) -> str:
         cbu = " " * 22
         fecha_rubrica = " " * 8
 
-        item = f'02{cuil}{str(leg).zfill(10)}{area}{cbu}030{fecha_pago}{fecha_rubrica}{forma_pago}'
+        item = f'02{cuil}{leg}{area}{cbu}030{fecha_pago}{fecha_rubrica}{forma_pago}'
 
         resp.append(item)
 
     resp_final = '\r\n'.join(resp)
 
     return resp_final
+
+
+def process_reg3(concepto_liq: QuerySet) -> str:
+    """
+    Identificación del tipo de registro	2	1	2
+    CUIL del trabajador	11	3	13
+    Código de concepto liquidado por el empleador	10	14	23
+    Cantidad	5	24	28
+    Unidades	1	29	29
+    Importe	15	30	44
+    Indicador Débito / Crédito	1	45	45
+    Período de ajuste retroactivo	6	46	51
+    """
+    resp = []
+
+    for concepto in concepto_liq:
+        cuil = concepto.empleado.cuil
+        cod_con = concepto.concepto.ljust(10)
+        cantidad = str(concepto.cantidad*100).zfill(5)
+        importe = round(abs(concepto.importe), 2) * 100
+        importe = str(int(importe)).zfill(15)
+        tipo = 'C' if concepto.importe > 0 else 'D'
+
+        # Genero fila
+        item = f'03{cuil}{cod_con}{cantidad}D{importe}{tipo}{" " * 6}'
+        resp.append(item)
+
+    resp_final = '\r\n'.join(resp)
+
+    return resp_final
+
+
+def process_reg4(txt_info: str) -> str:
+    resp = []
+    reg4_qs = OrdenRegistro.objects.filter(tiporegistro__order=4)
+
+    for legajo in txt_info:
+        linea = ''
+        mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
+        rem2 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+        rem4 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
+        rem8 = amount_txt_to_integer(get_value_from_txt(legajo, 'Rem.Dec.788/05 - Rem Impon. 8'))
+        rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
+        rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
+        detr = amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
+
+        for reg in reg4_qs:
+            if reg.formatof931:
+                # Si está lo vinculo puliendo formato
+                tmp_linea = sync_format(get_value_from_txt(legajo, reg.formatof931.name), reg.long, reg.type)
+                if (reg.formatof931.name == 'Cónyuge' or
+                        reg.formatof931.name == 'Trabajador Convencionado 0-No 1-Si' or
+                        reg.formatof931.name == 'Seguro Colectivo de Vida Obligatorio' or
+                        reg.formatof931.name == 'Marca de Corresponde Reducción'):
+
+                    tmp_linea = tmp_linea.replace('T', '1').replace('F', '0')
+
+                linea += tmp_linea
+
+            else:
+                # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
+                if reg.name == 'Identificación del tipo de registro':
+                    linea += '04'
+                elif reg.name == 'Base imponible 10':
+                    rem10 = rem10 - detr
+
+                    if detr == 0 or mod_cont in NOT_SIJP:
+                        rem10 = 0
+
+                    linea += str(rem10).zfill(15)
+                elif reg.name == 'Base para el cálculo diferencial de aporte de obra social y FSR (1)':
+
+                    # TODO: Ver esta particularidad de LSD
+                    # Valido R4
+                    # R4 = Rem + NR OS y Sind + Ap.Ad.OS
+                    # Ap.Ad.OS = R4 - Rem - NR OS y Sind
+                    tipo_nr = '2'
+                    resta = rem2 if tipo_nr != '2' else rem9
+                    aa_os = rem4 - resta
+                    linea += str(aa_os).zfill(15)
+
+                elif reg.name == 'Base para el cálculo diferencial de contribuciones de obra social y FSR (1)':
+                    # Valido R8
+                    # R8 = Rem + NR OS y Sind + Ct.Ad.OS
+                    # Ct.Ad.OS = R8 - Rem - NR OS y Sind
+                    tipo_nr = '2'
+                    resta = rem2 if tipo_nr != '2' else rem9
+                    aa_os = rem8 - resta
+                    linea += str(aa_os).zfill(15)
+
+                else:
+                    linea += "0" * reg.long
+
+        resp.append(linea)
+
+    resp_final = '\r\n'.join(resp)
+
+    return resp_final
+
+
+def process_reg4_from_liq(concepto_liq: QuerySet) -> str:
+    resp = ''
+    # TODO: Generar registro 4 desde liquidación
+
+    return resp
 
 
 def process_presentacion(presentacion_qs: Presentacion) -> Path:
@@ -193,19 +307,25 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
     txt_clean_info = [x for x in txt_info if len(x) > 2]
 
     for liquidacion in liquidaciones:
-        reg1 = process_reg1(cuit,
-                            liquidacion.payday,
-                            liquidacion.employees)
-        reg2 = process_reg2(txt_clean_info, liquidacion.payday, cuit)
-        # reg3 = process_reg3(txt_no_eventuales, export_config)
-        reg3 = ''
-        # reg4 = process_reg4(txt_clean_info, export_config)
-        reg4 = ''
-        # reg5 = process_reg5(txt_just_eventuales, export_config) if txt_just_eventuales else ''
+        conceptos = ConceptoLiquidacion.objects.filter(liquidacion=liquidacion)
+        legajos = conceptos.values('empleado').distinct()
+        reg1 = process_reg1(cuit=cuit,
+                            periodo=per_liq,
+                            employees=liquidacion.employees,
+                            nro_liq=liquidacion.nroLiq)
+        reg2 = process_reg2(legajos, liquidacion.payday, cuit)
+        reg3 = process_reg3(conceptos)
+        if liquidaciones.count() == 1:
+            reg4 = process_reg4(txt_clean_info)
+        else:
+            reg4 = process_reg4_from_liq(conceptos)
+
+        # TODO: Eventuales
+        reg5 = ''
 
         final_result = reg1 + '\r\n' + reg2 + '\r\n' + reg3 + '\r\n' + reg4
-        # if reg5:
-        #     final_result += '\r\n' + reg5
+        if reg5:
+            final_result += '\r\n' + reg5
 
         txt_output_file = f'{fpath}_{liquidacion.nroLiq}.txt'
         txt_sp = txt_output_file.split('/')
