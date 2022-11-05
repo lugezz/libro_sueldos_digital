@@ -180,7 +180,7 @@ class LiquidacionForm(ModelForm):
         widgets = {
             'nroLiq': Select(
                 attrs={
-                    'class': "form-select mb-2"
+                    'class': "form-select mb-3"
                 }
             ),
         }
