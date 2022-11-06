@@ -137,11 +137,9 @@ def process_reg1(cuit: str, periodo: datetime.date, employees: int, nro_liq: int
 
     resp = f'01{cuit}SJ'
     resp += periodo
-    # TODO: Configurar 'M'=mes; 'Q'=quincena; 'S'=semanal
     resp += 'M'
     resp += str(nro_liq).zfill(5)
 
-    # TODO: Configurar
     ds_base = 30
     resp += str(ds_base).zfill(2) + str(employees).zfill(6)
 
@@ -165,10 +163,9 @@ def process_reg2(leg_liqs: QuerySet, payday: datetime.date, cuit: str) -> str:
         empleado = Empleado.objects.get(id=id_legajo['empleado'])
         cuil = empleado.cuil
         leg = str(empleado.leg).zfill(10)
-        # TODO: Configurar area en empleado
+
         area = 'Principal'.ljust(50)
         fecha_pago = payday.strftime('%Y%m%d')
-        # TODO: Configurar forma de pago. No acreditación porque requiere CBU
         forma_pago = 1
         cbu = " " * 22
         fecha_rubrica = " " * 8
@@ -252,7 +249,6 @@ def process_reg4(txt_info: str) -> str:
                     linea += str(rem10).zfill(15)
                 elif reg.name == 'Base para el cálculo diferencial de aporte de obra social y FSR (1)':
 
-                    # TODO: Ver esta particularidad de LSD
                     # Valido R4
                     # R4 = Rem + NR OS y Sind + Ap.Ad.OS
                     # Ap.Ad.OS = R4 - Rem - NR OS y Sind
@@ -282,7 +278,6 @@ def process_reg4(txt_info: str) -> str:
 
 def process_reg4_from_liq(concepto_liq: QuerySet) -> str:
     resp = ''
-    # TODO: Generar registro 4 desde liquidación
 
     return resp
 
@@ -320,7 +315,6 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         else:
             reg4 = process_reg4_from_liq(conceptos)
 
-        # TODO: Eventuales
         reg5 = ''
 
         final_result = reg1 + '\r\n' + reg2 + '\r\n' + reg3 + '\r\n' + reg4
@@ -342,7 +336,6 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
     if len(liquidaciones_list) == 1:
         resp = liquidaciones_list[0]
     else:
-        # TODO: Armar un zip de todas las liquidaciones y borrarlas
         pass
 
     return resp
@@ -353,7 +346,6 @@ def get_final_txts(user: SimpleLazyObject, id_presentacion: int) -> Path:
         'path': ''
     }
 
-    # TODO: Configurar eventuales
     presentacion_qs = Presentacion.objects.get(id=id_presentacion)
     cuit = presentacion_qs.empresa.cuit
     username = presentacion_qs.user.username

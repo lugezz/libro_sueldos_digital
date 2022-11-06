@@ -35,7 +35,6 @@ class HomeView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['query'] = query_historia
         context['this_month'] = last_month_str
-        # TODO: Resumen, cantidad de liquidaciones, empleados y total remuneración
         context['listado'] = last_month_str
 
         return context
@@ -480,7 +479,6 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
                 context['path_txts'] = path_txts['path']
 
         else:
-            # TODO: En el futuro agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
             df_liq = pd.read_excel(request.FILES['xlsx_liq'])
             nro_liq = request.POST['nroLiq']
             payday = datetime.datetime.strptime(request.POST['payday'], '%d/%m/%Y')

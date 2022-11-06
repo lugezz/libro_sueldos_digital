@@ -24,4 +24,36 @@ _Eventuales: Pendiente fecha de ingreso y de egreso_
 
 ### Exportación Avanzada
 
-_Pendiente configuración de inclusión de CBU_
+_No está alcanzado el pago por CBU_
+
+---
+
+### TODO List
+#### Panel Control
+
+* Resumen, cantidad de liquidaciones, empleados y total remuneración
+
+#### Exportación avanzada
+
+* Configurar 'M'=mes; 'Q'=quincena; 'S'=semanal
+* Configurar días base
+* Configurar forma de pago. No acreditación porque requiere CBU
+* Ver cálculo de la Base Adicional OS.
+* Generar registro 4 desde liquidación
+* Armar un zip de todas las liquidaciones y borrarlas
+* Borrado de liquidación
+
+#### Empleados
+
+* Configurar area en empleado
+
+---
+
+### Future versions TODO List
+
+#### Exportación avanzada
+* Agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
+* Eventuales
+
+#### Empleados
+* Borrado masivo y ver si exportación conviene pisar

@@ -39,7 +39,6 @@ def get_employees(file_import: Path) -> dict:
             employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} Inválido")
             continue
 
-        # TODO: Ver si conviene pisar
         if get_empleado_name(str(row['CUIT']), str(row['Leg'])):
             employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} - CUIT {row['CUIT']} ya existe")
             continue

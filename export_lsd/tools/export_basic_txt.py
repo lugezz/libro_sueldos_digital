@@ -234,7 +234,6 @@ def process_reg5(txt_info: str, export_config: dict) -> str:
     resp = []
     for legajo in txt_info:
         cuil = get_value_from_txt(legajo, 'CUIL')
-        # TODO: Get información de simplicación registral, ver forma
         cuit_emp = export_config['cuit_empleador_eventuales']
         rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
 
