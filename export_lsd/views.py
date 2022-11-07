@@ -409,7 +409,12 @@ def advanced_export(request):
     if request.method == 'POST':
         id_empresa = request.POST.get("empresa")
         cuit = Empresa.objects.get(id=id_empresa).cuit
-        per_liq = request.POST.get("periodo").replace('-', '')
+        periodo = request.POST.get("periodo")
+
+        presentacion = Presentacion.objects.get(user=request.user,
+                                                empresa__id=id_empresa,
+                                                periodo=f'{periodo}-01')
+        per_liq = periodo.replace('-', '')
         # Txt F931 subido
         if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
@@ -427,35 +432,24 @@ def advanced_export(request):
 
         # Procesar nomás
         else:
-            return redirect(reverse('export_lsd:advanced_liqs',  kwargs={
-                'username': request.user.username,
-                'periodo': per_liq,
-                'cuit': cuit
-            }))
+            return redirect(reverse('export_lsd:advanced_liqs',  kwargs={'pk': presentacion.id}))
 
     return render(request, 'export_lsd/export/advanced.html', context)
 
 
 @login_required
-def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
+def advanced_export_liqs(request, pk: int):
     form = LiquidacionForm(request.POST or None)
+    periodo_obj = Presentacion.objects.get(id=pk)
+    periodo = periodo_obj.periodo
+    empresa = periodo_obj.empresa
 
-    periodo_for = periodo[:4] + "-" + periodo[-2:] + "-01"
-    periodo_obj = Presentacion.objects.filter(user__username=username, empresa__cuit=cuit, periodo=periodo_for)
-    empresa = Empresa.objects.get(cuit=cuit, user=request.user)
-
-    if not periodo_obj:
-        periodo_obj = Presentacion.objects.create(empresa=empresa, periodo=periodo_for)
-    else:
-        periodo_obj = periodo_obj.first()
-
-    id_presentacion = periodo_obj.id
     liquidaciones_qs = Liquidacion.objects.filter(presentacion=periodo_obj)
     nro_liqs = list(liquidaciones_qs.values_list('nroLiq', flat=True))
     nro_liqs_open = [x for x in range(1, 26) if x not in nro_liqs]
 
     context = {
-        'id_presentacion': id_presentacion,
+        'id_presentacion': pk,
         'liquidaciones': liquidaciones_qs,
         'periodo': periodo,
         'empresa': empresa.name,
@@ -470,7 +464,7 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
     if request.method == 'POST':
         if 'get-txts' in request.POST:
             # Clic en descargar archivo
-            path_txts = get_final_txts(request.user, id_presentacion)
+            path_txts = get_final_txts(request.user, pk)
 
             if 'error' in path_txts:
                 messages.error(request, path_txts['error'])
@@ -502,7 +496,7 @@ def advanced_export_liqs(request, periodo: str, cuit: str, username: str):
                 return redirect(reverse_lazy('export_lsd:empleado_list'))
 
             # Procesar la Liquidación
-            result = process_liquidacion(id_presentacion, nro_liq, payday, df_liq)
+            result = process_liquidacion(pk, nro_liq, payday, df_liq)
             context['empleados'] = result.get('empleados', 0)
             context['remunerativos'] = result.get('remunerativos', 0)
             context['no_remunerativos'] = result.get('no_remunerativos', 0)
@@ -527,6 +521,35 @@ class PresentacionDeleteView(LoginRequiredMixin, DeleteView):
         context['title'] = 'Eliminación de una Presentación'
         context['entity'] = 'Presentaciones'
         context['list_url'] = reverse_lazy('export_lsd:advanced')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            self.object.delete()
+        except Exception as e:
+            data['error'] = str(e)
+        return JsonResponse(data)
+
+
+class LiquidacionDeleteView(LoginRequiredMixin, DeleteView):
+    model = Liquidacion
+    template_name = 'export_lsd/export/delete.html'
+
+    def get_success_url(self):
+        liquidacion = Liquidacion.objects.get(id=self.kwargs['pk'])
+        id_presentacion = liquidacion.presentacion.id
+        return reverse_lazy('export_lsd:advanced_liqs', kwargs={'pk': id_presentacion})
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Eliminación de una Liquidación'
+        context['entity'] = 'Liquidaciones'
+        context['list_url'] = self.get_success_url()
         return context
 
     def post(self, request, *args, **kwargs):

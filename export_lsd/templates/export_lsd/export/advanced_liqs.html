@@ -21,7 +21,7 @@
     {% csrf_token %}
     <div class="row">
         <div class="col-12">
-            <p class="h1 text-center mb-5">{{ empresa }} - {{ periodo|slice:"-2:" }}/{{ periodo|slice:":4" }}</p>
+            <p class="h1 text-center mb-5">{{ empresa }} - {{ periodo|date:"Y/m" }}</p>
         </div>
         <div class="col-3">
             <!-- Fecha de pago -->
@@ -70,8 +70,9 @@
                             <th scope="col" class="text-center">Nro</th>
                             <th scope="col" class="text-center">Fecha</th>
                             <th scope="col" class="text-center">Empleados</th>
-                            <th scope="col" class="text-center">Remunerativos</th>
-                            <th scope="col" class="text-center">No Remun.</th>
+                            <th scope="col" class="text-center">Remuner.</th>
+                            <th scope="col" class="text-center">No Rem.</th>
+                            <th scope="col" class="text-center">Acción</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -82,6 +83,14 @@
                             <td class="text-center">{{ liquidacion.employees }}</td>
                             <td class="text-end">${{ liquidacion.remunerativos|floatformat:2|localize }}</td>
                             <td class="text-end">${{ liquidacion.no_remunerativos|floatformat:2|localize }}</td>
+                            <td class="text-center">
+                                <a 
+                                  class="btn btn-outline-danger btn-sm" id="btn_delete_advanced"
+                                  href="{% url 'export_lsd:advanced_liq_delete' pk=liquidacion.id %}"
+                                >
+                                  <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                         </tbody>

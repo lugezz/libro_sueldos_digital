@@ -82,7 +82,7 @@
                         <tr>
                             <th scope="col" style="width: 30%" class="text-center">Período</th>
                             <th scope="col" style="width: 55%" class="text-center">Empresa</th>
-                            <th scope="col" style="width: 15%"></th>
+                            <th scope="col" style="width: 15%" class="text-center">Acción</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -99,7 +99,7 @@
                                 </a>
                                 <a 
                                   class="btn btn-outline-success btn-sm"
-                                  href="{% url 'export_lsd:advanced_liqs' username=presentacion.user periodo=presentacion.periodo_str cuit=presentacion.empresa.cuit %}"
+                                  href="{% url 'export_lsd:advanced_liqs' presentacion.id %}"
                                 >
                                     <i class="fas fa-arrow-right"></i>
                                 </a>
