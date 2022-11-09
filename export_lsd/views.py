@@ -408,12 +408,21 @@ def advanced_export(request):
 
     if request.method == 'POST':
         id_empresa = request.POST.get("empresa")
-        cuit = Empresa.objects.get(id=id_empresa).cuit
+        empresa = Empresa.objects.get(id=id_empresa)
+        cuit = empresa.cuit
         periodo = request.POST.get("periodo")
 
-        presentacion = Presentacion.objects.get(user=request.user,
-                                                empresa__id=id_empresa,
-                                                periodo=f'{periodo}-01')
+        presentacion = Presentacion.objects.filter(user=request.user,
+                                                   empresa__id=id_empresa,
+                                                   periodo=f'{periodo}-01')
+
+        if not presentacion:
+            this_presentacion = Presentacion.objects.create(user=request.user,
+                                                            empresa=empresa,
+                                                            periodo=f'{periodo}-01')
+        else:
+            this_presentacion = presentacion.first()
+
         per_liq = periodo.replace('-', '')
         # Txt F931 subido
         if 'txtF931' in request.FILES:
@@ -432,7 +441,7 @@ def advanced_export(request):
 
         # Procesar nomás
         else:
-            return redirect(reverse('export_lsd:advanced_liqs',  kwargs={'pk': presentacion.id}))
+            return redirect(reverse('export_lsd:advanced_liqs',  kwargs={'pk': this_presentacion.id}))
 
     return render(request, 'export_lsd/export/advanced.html', context)
 

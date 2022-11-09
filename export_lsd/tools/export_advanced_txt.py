@@ -282,7 +282,7 @@ def get_specific_F931_txt_line(cuil: str, txt_info: str) -> str:
     resp = ''
 
     for legajo in txt_info:
-        this_cuil = get_value_from_txt(legajo, 'Código de Modalidad de Contratación')
+        this_cuil = get_value_from_txt(legajo, 'CUIL')
         if cuil == this_cuil:
             # Siempre debería estar, ya está previamente controlado
             resp = legajo
@@ -320,6 +320,9 @@ def get_basic_f931_info(txt_line: str) -> dict:
         'Cantidad de Adherentes': ''
     }
     # TODO Next: Obtener de txt
+
+    for item in resp.keys():
+        resp[item] = get_value_from_txt(txt_line, item)
 
     return resp
 
@@ -379,11 +382,43 @@ def process_reg4_from_liq(leg_liqs: QuerySet, concepto_liq: QuerySet, txt_info: 
         empleado = Empleado.objects.get(id=id_legajo['empleado'])
         cuil = empleado.cuil
         txt_legajo = get_specific_F931_txt_line(str(cuil), txt_info)
-        remuneracion = concepto_liq.filter(tipo='Rem').aggregate(Sum('importe'))
-        no_remunerativo = concepto_liq.filter(tipo='NR').aggregate(Sum('importe'))
-        aporte_os = concepto_liq.filter(tipo='ApOS').aggregate(Sum('importe'))
+        basic_info_legal = get_basic_f931_info(txt_legajo)
+        tmp_value = concepto_liq.filter(tipo='Rem').aggregate(Sum('importe'))
+        remuneracion = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
+        tmp_value = concepto_liq.filter(tipo='NR').aggregate(Sum('importe'))
+        no_remunerativo = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
+        tmp_value = concepto_liq.filter(tipo='ApOS').aggregate(Sum('importe'))
+        aporte_os = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
 
         this_line = f'04{cuil}'
+        this_line += basic_info_legal['Cónyuge']
+        this_line += basic_info_legal['Cantidad de Hijos']
+        this_line += basic_info_legal['Trabajador Convencionado 0-No 1-Si']
+        this_line += basic_info_legal['Seguro Colectivo de Vida Obligatorio']
+        this_line += basic_info_legal['Marca de Corresponde Reducción']
+        this_line += basic_info_legal['Tipo de empresa']
+        this_line += basic_info_legal['Tipo de Operación']
+        this_line += basic_info_legal['Codigo de Situación']
+        this_line += basic_info_legal['Codigo de Condición']
+        this_line += basic_info_legal['Código de Actividad']
+        this_line += basic_info_legal['Código de Modalidad de Contratación']
+        this_line += basic_info_legal['Código de Siniestrado']
+        this_line += basic_info_legal['Código de Zona']
+        this_line += basic_info_legal['Situación de Revista 1']
+        this_line += basic_info_legal['Dia inicio Situación de Revista 1']
+        this_line += basic_info_legal['Situación de Revista 2']
+        this_line += basic_info_legal['Dia inicio Situación de Revista 2']
+        this_line += basic_info_legal['Situación de Revista 3']
+        this_line += basic_info_legal['Dia inicio Situación de Revista 3']
+        this_line += basic_info_legal['Cantidad de días trabajados']
+        this_line += basic_info_legal['Horas trabajadas']
+        this_line += basic_info_legal['Porcentaje de Aporte Adicional SS']
+        this_line += basic_info_legal['Contribucion tarea diferencial (%)']
+        this_line += basic_info_legal['Código de Obra Social']
+        this_line += basic_info_legal['Cantidad de Adherentes']
+
+        # TODO Next: Completar esto
+        this_line += f'{remuneracion} {no_remunerativo} {aporte_os}'
 
         resp.append(this_line)
 
@@ -397,7 +432,7 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
     liquidaciones_list = []
     resp = ''
 
-    liquidaciones = Liquidacion.objects.filter(presentacion=presentacion_qs)
+    liquidaciones = Liquidacion.objects.filter(presentacion=presentacion_qs).order_by('nroLiq')
     cuit = presentacion_qs.empresa.cuit
     username = presentacion_qs.user.username
     per_liq = presentacion_qs.periodo.strftime('%Y%m')
@@ -423,7 +458,13 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:
             reg4 = process_reg4(txt_clean_info)
         else:
-            reg4 = process_reg4_from_liq(legajos, conceptos, txt_clean_info)
+            # Para el registro 4 va la información acumulada
+            conceptos_ac = ConceptoLiquidacion.objects.filter(
+                liquidacion__nroLiq__lte=liquidacion.nroLiq,
+                liquidacion__presentacion=liquidacion.presentacion
+                )
+            legajos = conceptos_ac.values('empleado').distinct()
+            reg4 = process_reg4_from_liq(legajos, conceptos_ac, txt_clean_info)
 
         reg5 = ''
 
