@@ -43,9 +43,6 @@ _No está alcanzado el pago por CBU_
 * Armar un zip de todas las liquidaciones y borrarlas
 * Luego de generado el archivo final, borrar txt y zip. Identificar el período como realizado
 
-#### Empleados
-
-* Configurar area en empleado
 
 ---
 
