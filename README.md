@@ -39,7 +39,6 @@ _No está alcanzado el pago por CBU_
 * Configurar días base
 * Configurar forma de pago. No acreditación porque requiere CBU
 * Ver cálculo de la Base Adicional OS.
-* Generar registro 4 desde liquidación
 * Armar un zip de todas las liquidaciones y borrarlas
 * Luego de generado el archivo final, borrar txt y zip. Identificar el período como realizado
 
