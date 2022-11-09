@@ -10,6 +10,7 @@ import datetime
 import os
 from pathlib import Path
 
+from django.db.models import Sum
 from django.db.models.query import QuerySet
 from django.utils.functional import SimpleLazyObject
 from pandas import DataFrame
@@ -93,7 +94,8 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
                                          empleado=empleado,
                                          concepto=row['Concepto'],
                                          cantidad=row['Cant'],
-                                         importe=importe))
+                                         importe=importe,
+                                         tipo=row['Tipo']))
     bulk_mgr.done()
 
     # Update Liquidación
@@ -289,7 +291,40 @@ def get_specific_F931_txt_line(cuil: str, txt_info: str) -> str:
     return resp
 
 
-def process_reg4_from_liq(concepto_liq: QuerySet, txt_info: str) -> str:
+def get_basic_f931_info(txt_line: str) -> dict:
+    resp = {
+        'Cónyuge': '',
+        'Cantidad de Hijos': '',
+        'Trabajador Convencionado 0-No 1-Si': '',
+        'Seguro Colectivo de Vida Obligatorio': '',
+        'Marca de Corresponde Reducción': '',
+        'Tipo de empresa': '',
+        'Tipo de Operación': '',
+        'Codigo de Situación': '',
+        'Codigo de Condición': '',
+        'Código de Actividad': '',
+        'Código de Modalidad de Contratación': '',
+        'Código de Siniestrado': '',
+        'Código de Zona': '',
+        'Situación de Revista 1': '',
+        'Dia inicio Situación de Revista 1': '',
+        'Situación de Revista 2': '',
+        'Dia inicio Situación de Revista 2': '',
+        'Situación de Revista 3': '',
+        'Dia inicio Situación de Revista 3': '',
+        'Cantidad de días trabajados': '',
+        'Horas trabajadas': '',
+        'Porcentaje de Aporte Adicional SS': '',
+        'Contribucion tarea diferencial (%)': '',
+        'Código de Obra Social': '',
+        'Cantidad de Adherentes': ''
+    }
+    # TODO Next: Obtener de txt
+
+    return resp
+
+
+def process_reg4_from_liq(leg_liqs: QuerySet, concepto_liq: QuerySet, txt_info: str) -> str:
     """
     Identificación del tipo de registro,2,1,2,AL,Fijo '04'
     CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
@@ -305,7 +340,7 @@ def process_reg4_from_liq(concepto_liq: QuerySet, txt_info: str) -> str:
     código de actividad,3,26,28,AN,
     código de modalidad de contratación,3,29,31,AN
     código de siniestrado,2,32,33,AN
-    código de localidad,2,335,AN
+    código de localidad,2,34,35,AN
     Situación de revista 1,2,36,37,AN
     Día de inicio situación de revista 1,2,38,39,NU,2 enteros.
     Situación de revista 2,2,40,41,AN
@@ -339,14 +374,22 @@ def process_reg4_from_liq(concepto_liq: QuerySet, txt_info: str) -> str:
     Base imponible 10,15,341,355,NU,
     Importe a detraer (Ley 26.473),15,356,370,NU,
     """
-    resp = ''
-    for concepto in concepto_liq:
-        cuil = concepto.empleado.cuil
-        cod_con = concepto.concepto.ljust(10)
+    resp = []
+    for id_legajo in leg_liqs:
+        empleado = Empleado.objects.get(id=id_legajo['empleado'])
+        cuil = empleado.cuil
+        txt_legajo = get_specific_F931_txt_line(str(cuil), txt_info)
+        remuneracion = concepto_liq.filter(tipo='Rem').aggregate(Sum('importe'))
+        no_remunerativo = concepto_liq.filter(tipo='NR').aggregate(Sum('importe'))
+        aporte_os = concepto_liq.filter(tipo='ApOS').aggregate(Sum('importe'))
 
-    this_txt_line = get_specific_F931_txt_line()
+        this_line = f'04{cuil}'
 
-    return resp
+        resp.append(this_line)
+
+    resp_final = '\r\n'.join(resp)
+
+    return resp_final
 
 
 def process_presentacion(presentacion_qs: Presentacion) -> Path:
@@ -380,7 +423,7 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:
             reg4 = process_reg4(txt_clean_info)
         else:
-            reg4 = process_reg4_from_liq(conceptos)
+            reg4 = process_reg4_from_liq(legajos, conceptos, txt_clean_info)
 
         reg5 = ''
 

@@ -164,7 +164,7 @@ class ConceptoLiquidacion(models.Model):
     concepto = models.CharField(max_length=10)
     cantidad = models.PositiveSmallIntegerField(default=0)
     importe = models.FloatField(default=0)
-    tipo = models.CharField(max_length=3, verbose_name='Tipo de Concepto', default="Rem")
+    tipo = models.CharField(max_length=4, verbose_name='Tipo de Concepto', default="Rem")
 
     def __str__(self) -> str:
         return f'Leg.{self.empleado.leg} - Conc:{self.concepto} - $ {self.importe}'
