@@ -32,8 +32,8 @@
                 {% endif %}
                 {% for field in form.visible_fields %}
                     <div class="form-group">
-                        <label for="email">{{ field.label }}:</label>
-                        {{ field|add_class:'form-control' }}
+                        <label for="email" class="mb-1">{{ field.label }}:</label>
+                        {{ field|add_class:'form-control mb-2' }}
                     </div>
                 {% endfor %}
             </div>

@@ -371,7 +371,7 @@ def import_empleados(request):
             bulk_mgr = BulkCreateManager()
             for item in data:
                 empresa = Empresa.objects.get(cuit=item[0])
-                bulk_mgr.add(Empleado(empresa=empresa, leg=item[1], name=item[2], cuil=item[3]))
+                bulk_mgr.add(Empleado(empresa=empresa, leg=item[1], name=item[2], cuil=item[3], area=item[4]))
             bulk_mgr.done()
 
             return redirect(reverse_lazy('export_lsd:empleado_list'))

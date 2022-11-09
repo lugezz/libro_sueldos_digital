@@ -164,7 +164,7 @@ def process_reg2(leg_liqs: QuerySet, payday: datetime.date, cuit: str) -> str:
         cuil = empleado.cuil
         leg = str(empleado.leg).zfill(10)
 
-        area = 'Principal'.ljust(50)
+        area = empleado.area.ljust(50)
         fecha_pago = payday.strftime('%Y%m%d')
         forma_pago = 1
         cbu = " " * 22
@@ -276,8 +276,75 @@ def process_reg4(txt_info: str) -> str:
     return resp_final
 
 
-def process_reg4_from_liq(concepto_liq: QuerySet) -> str:
+def get_specific_F931_txt_line(cuil: str, txt_info: str) -> str:
     resp = ''
+
+    for legajo in txt_info:
+        this_cuil = get_value_from_txt(legajo, 'Código de Modalidad de Contratación')
+        if cuil == this_cuil:
+            # Siempre debería estar, ya está previamente controlado
+            resp = legajo
+            break
+
+    return resp
+
+
+def process_reg4_from_liq(concepto_liq: QuerySet, txt_info: str) -> str:
+    """
+    Identificación del tipo de registro,2,1,2,AL,Fijo '04'
+    CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
+    Cónyuge,1,11NU,
+    Cant Hijos,2,15,16,NU,
+    CCT,1,17,17,AN,0 y 1 ó F y T
+    SVO,1,18,18,AN,0 y 1 ó F y T
+    Reducción,1,19,19,AN,0 y 1 ó F y T
+    código de tipo de empleador asociado al trabajador,1,20,20,AN,
+    código de tipo de operación,1,21,21,AN,Valor fijo: ?0?
+    código de situación de revista,2,22,23,AN,
+    código de condición,2,225,AN
+    código de actividad,3,26,28,AN,
+    código de modalidad de contratación,3,29,31,AN
+    código de siniestrado,2,32,33,AN
+    código de localidad,2,335,AN
+    Situación de revista 1,2,36,37,AN
+    Día de inicio situación de revista 1,2,38,39,NU,2 enteros.
+    Situación de revista 2,2,40,41,AN
+    Día de inicio situación de revista 2,2,42,43,NU,2 enteros.
+    Situación de revista 3,2,445,AN
+    Día de inicio situación de revista 3,2,46,47,NU,2 enteros.
+    Cantidad de días trabajados,2,48,49,NU,2 enteros.
+    Cantidad de horas trabajadas,3,50,52,NU,"3 enteros.
+    Porcentaje de aporte adicional de seguridad social,5,53,57,NU,3 enteros y 2 decimales
+    Porcentaje de contribución por tarea diferencial,5,58,62,NU,3 enteros y 2 decimales.
+    código de obra social del trabajador,6,63,68,AN,Según tabla de codificación RNOS
+    Cantidad de adherentes de obra social,2,69,70,NU,2 enteros.
+    Aporte adicional de obra social,15,71,85,NU,
+    Contribución adicional de obra social,15,86,100,NU,
+    Base para el cálculo diferencial de aporte de obra social y FSR (1),15,101,115,NU,
+    Base para el cálculo diferencial de contribuciones de obra social y FSR (1),15,116,130,NU,
+    Base para el cálculo diferencial Ley de Riesgos del Trabajo (1),15,131,145,NU,
+    Remuneración maternidad para ANSeS,15,146,160,NU,
+    Remuneración bruta,15,161,175,NU,
+    Base imponible 1,15,176,190,NU,
+    Base imponible 2,15,191,205,NU,
+    Base imponible 3,15,206,220,NU,
+    Base imponible 15,221,235,NU,
+    Base imponible 5,15,236,250,NU,
+    Base imponible 6,15,251,265,NU,
+    Base imponible 7,15,266,280,NU,
+    Base imponible 8,15,281,295,NU,
+    Base imponible 9,15,296,310,NU,
+    Base para el cálculo diferencial de aporte de Seg. Social,15,311,325,NU,
+    Base para el cálculo diferencial de contribuciones de Seg. Social,15,326,340,NU,
+    Base imponible 10,15,341,355,NU,
+    Importe a detraer (Ley 26.473),15,356,370,NU,
+    """
+    resp = ''
+    for concepto in concepto_liq:
+        cuil = concepto.empleado.cuil
+        cod_con = concepto.concepto.ljust(10)
+
+    this_txt_line = get_specific_F931_txt_line()
 
     return resp
 
@@ -301,7 +368,7 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
 
     txt_clean_info = [x for x in txt_info if len(x) > 2]
 
-    for liquidacion in liquidaciones:
+    for i, liquidacion in enumerate(liquidaciones):
         conceptos = ConceptoLiquidacion.objects.filter(liquidacion=liquidacion)
         legajos = conceptos.values('empleado').distinct()
         reg1 = process_reg1(cuit=cuit,
@@ -310,7 +377,7 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
                             nro_liq=liquidacion.nroLiq)
         reg2 = process_reg2(legajos, liquidacion.payday, cuit)
         reg3 = process_reg3(conceptos)
-        if liquidaciones.count() == 1:
+        if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:
             reg4 = process_reg4(txt_clean_info)
         else:
             reg4 = process_reg4_from_liq(conceptos)

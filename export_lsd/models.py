@@ -94,6 +94,7 @@ class Empleado(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     name = models.CharField(max_length=120, verbose_name='Nombre', null=True, blank=True)
     cuil = models.CharField(max_length=11, validators=[MinLengthValidator(11)])
+    area = models.CharField(max_length=120, verbose_name='Área de Trabajo', null=True, blank=True)
 
     def __str__(self) -> str:
         return f'{self.empresa.name} - L.{self.leg}: {self.name}'
@@ -163,6 +164,7 @@ class ConceptoLiquidacion(models.Model):
     concepto = models.CharField(max_length=10)
     cantidad = models.PositiveSmallIntegerField(default=0)
     importe = models.FloatField(default=0)
+    tipo = models.CharField(max_length=3, verbose_name='Tipo de Concepto', default="Rem")
 
     def __str__(self) -> str:
         return f'Leg.{self.empleado.leg} - Conc:{self.concepto} - $ {self.importe}'

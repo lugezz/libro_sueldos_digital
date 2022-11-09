@@ -23,12 +23,12 @@ def get_employees(file_import: Path) -> dict:
 
     for index, row in df.iterrows():
 
-        if not is_positive_number(str(row['CUIT'])) or len(str(row['CUIT'])) != 11:
-            employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT']} Inválido")
+        if not is_positive_number(str(row['CUIT Empresa'])) or len(str(row['CUIT Empresa'])) != 11:
+            employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT Empresa']} Inválido")
             continue
 
-        if not get_company_name(row['CUIT']):
-            employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT']} inexistente")
+        if not get_company_name(row['CUIT Empresa']):
+            employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT Empresa']} inexistente")
             continue
 
         if not is_positive_number(str(row['CUIL'])) or len(str(row['CUIL'])) != 11:
@@ -39,12 +39,12 @@ def get_employees(file_import: Path) -> dict:
             employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} Inválido")
             continue
 
-        if get_empleado_name(str(row['CUIT']), str(row['Leg'])):
-            employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} - CUIT {row['CUIT']} ya existe")
+        if get_empleado_name(str(row['CUIT Empresa']), str(row['Leg'])):
+            employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} - CUIT {row['CUIT Empresa']} ya existe")
             continue
 
         # Todo ok aquí
-        employees_dict['results'].add((row['CUIT'], row['Leg'], row['Nombre'], row['CUIL']))
+        employees_dict['results'].add((row['CUIT Empresa'], row['Leg'], row['Nombre'], row['CUIL'], row['Area']))
 
     # Results as list to make it JSON seriazable
     employees_dict['results'] = list(employees_dict['results'])
