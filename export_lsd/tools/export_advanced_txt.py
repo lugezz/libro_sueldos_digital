@@ -200,7 +200,7 @@ def process_reg3(concepto_liq: QuerySet) -> str:
         cantidad = str(concepto.cantidad*100).zfill(5)
         importe = round(abs(concepto.importe), 2) * 100
         importe = str(int(importe)).zfill(15)
-        tipo = 'C' if concepto.importe > 0 else 'D'
+        tipo = 'D' if concepto.tipo[:2] == 'Ap' else 'C'
 
         # Genero fila
         item = f'03{cuil}{cod_con}{cantidad}D{importe}{tipo}{" " * 6}'
@@ -256,7 +256,7 @@ def process_reg4(txt_info: str) -> str:
                     # Ap.Ad.OS = R4 - Rem - NR OS y Sind
                     tipo_nr = '2'
                     resta = rem2 if tipo_nr != '2' else rem9
-                    aa_os = rem4 - resta
+                    aa_os = max(0, rem4 - resta)
                     linea += str(aa_os).zfill(15)
 
                 elif reg.name == 'Base para el cálculo diferencial de contribuciones de obra social y FSR (1)':
@@ -265,7 +265,7 @@ def process_reg4(txt_info: str) -> str:
                     # Ct.Ad.OS = R8 - Rem - NR OS y Sind
                     tipo_nr = '2'
                     resta = rem2 if tipo_nr != '2' else rem9
-                    aa_os = rem8 - resta
+                    aa_os = max(0, rem8 - resta)
                     linea += str(aa_os).zfill(15)
 
                 else:
@@ -328,97 +328,132 @@ def get_basic_f931_info(txt_line: str) -> dict:
 
 
 def process_reg4_from_liq(leg_liqs: QuerySet, concepto_liq: QuerySet, txt_info: str) -> str:
-    """
-    Identificación del tipo de registro,2,1,2,AL,Fijo '04'
-    CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
-    Cónyuge,1,11NU,
-    Cant Hijos,2,15,16,NU,
-    CCT,1,17,17,AN,0 y 1 ó F y T
-    SVO,1,18,18,AN,0 y 1 ó F y T
-    Reducción,1,19,19,AN,0 y 1 ó F y T
-    código de tipo de empleador asociado al trabajador,1,20,20,AN,
-    código de tipo de operación,1,21,21,AN,Valor fijo: ?0?
-    código de situación de revista,2,22,23,AN,
-    código de condición,2,225,AN
-    código de actividad,3,26,28,AN,
-    código de modalidad de contratación,3,29,31,AN
-    código de siniestrado,2,32,33,AN
-    código de localidad,2,34,35,AN
-    Situación de revista 1,2,36,37,AN
-    Día de inicio situación de revista 1,2,38,39,NU,2 enteros.
-    Situación de revista 2,2,40,41,AN
-    Día de inicio situación de revista 2,2,42,43,NU,2 enteros.
-    Situación de revista 3,2,445,AN
-    Día de inicio situación de revista 3,2,46,47,NU,2 enteros.
-    Cantidad de días trabajados,2,48,49,NU,2 enteros.
-    Cantidad de horas trabajadas,3,50,52,NU,"3 enteros.
-    Porcentaje de aporte adicional de seguridad social,5,53,57,NU,3 enteros y 2 decimales
-    Porcentaje de contribución por tarea diferencial,5,58,62,NU,3 enteros y 2 decimales.
-    código de obra social del trabajador,6,63,68,AN,Según tabla de codificación RNOS
-    Cantidad de adherentes de obra social,2,69,70,NU,2 enteros.
-    Aporte adicional de obra social,15,71,85,NU,
-    Contribución adicional de obra social,15,86,100,NU,
-    Base para el cálculo diferencial de aporte de obra social y FSR (1),15,101,115,NU,
-    Base para el cálculo diferencial de contribuciones de obra social y FSR (1),15,116,130,NU,
-    Base para el cálculo diferencial Ley de Riesgos del Trabajo (1),15,131,145,NU,
-    Remuneración maternidad para ANSeS,15,146,160,NU,
-    Remuneración bruta,15,161,175,NU,
-    Base imponible 1,15,176,190,NU,
-    Base imponible 2,15,191,205,NU,
-    Base imponible 3,15,206,220,NU,
-    Base imponible 15,221,235,NU,
-    Base imponible 5,15,236,250,NU,
-    Base imponible 6,15,251,265,NU,
-    Base imponible 7,15,266,280,NU,
-    Base imponible 8,15,281,295,NU,
-    Base imponible 9,15,296,310,NU,
-    Base para el cálculo diferencial de aporte de Seg. Social,15,311,325,NU,
-    Base para el cálculo diferencial de contribuciones de Seg. Social,15,326,340,NU,
-    Base imponible 10,15,341,355,NU,
-    Importe a detraer (Ley 26.473),15,356,370,NU,
-    """
     resp = []
     for id_legajo in leg_liqs:
         empleado = Empleado.objects.get(id=id_legajo['empleado'])
         cuil = empleado.cuil
         txt_legajo = get_specific_F931_txt_line(str(cuil), txt_info)
         basic_info_legal = get_basic_f931_info(txt_legajo)
-        tmp_value = concepto_liq.filter(tipo='Rem').aggregate(Sum('importe'))
-        remuneracion = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
-        tmp_value = concepto_liq.filter(tipo='NR').aggregate(Sum('importe'))
-        no_remunerativo = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
-        tmp_value = concepto_liq.filter(tipo='ApOS').aggregate(Sum('importe'))
-        aporte_os = 0 if not tmp_value['importe__sum'] else tmp_value['importe__sum']
+        mod_cont = basic_info_legal['Código de Modalidad de Contratación']
 
+        tmp_value = concepto_liq.filter(tipo='Rem').aggregate(Sum('importe'))
+        remuneracion = 0 if not tmp_value['importe__sum'] else int(round(tmp_value['importe__sum'], 2) * 100)
+        tmp_value = concepto_liq.filter(tipo='NROS').aggregate(Sum('importe'))
+        no_remunerativo_os = 0 if not tmp_value['importe__sum'] else int(round(tmp_value['importe__sum'], 2) * 100)
+        tmp_value = concepto_liq.filter(tipo='NR').aggregate(Sum('importe'))
+        no_remunerativo = 0 if not tmp_value['importe__sum'] else int(round(tmp_value['importe__sum'], 2) * 100)
+        no_remunerativo += no_remunerativo_os
+        tmp_value = concepto_liq.filter(tipo='ApJb').aggregate(Sum('importe'))
+        aporte_jb = 0 if not tmp_value['importe__sum'] else int(round(tmp_value['importe__sum'], 2) * 100)
+        tmp_value = concepto_liq.filter(tipo='ApOS').aggregate(Sum('importe'))
+        aporte_os = 0 if not tmp_value['importe__sum'] else int(round(tmp_value['importe__sum'], 2) * 100)
+
+        remuneracion_1 = remuneracion if aporte_jb == 0 else int(round(aporte_jb / 0.11))
+        remuneracion_4 = max(remuneracion, int(round(aporte_os / 0.03)))
+        remuneracion_9 = remuneracion + no_remunerativo + no_remunerativo_os
+        remuneracion_10 = 0 if mod_cont in NOT_SIJP else remuneracion
+
+        if abs(remuneracion - remuneracion_1) < 100:
+            remuneracion_1 = remuneracion
+        if abs(remuneracion - remuneracion_4) < 100:
+            remuneracion_4 = remuneracion
+
+        adicional_os = max(0, remuneracion_4 - remuneracion - no_remunerativo_os)
+
+        # Completado de fila --------------------------------------------------
+        # Identificación del tipo de registro,2,1,2,AL,Fijo '04'
+        # CUIL del trabajador,11,3,13,NU,11 enteros. CUIL del empleado sin guiones.
         this_line = f'04{cuil}'
-        this_line += basic_info_legal['Cónyuge']
+        # Cónyuge,1,11NU,
+        this_line += basic_info_legal['Cónyuge'].replace('T', '1').replace('F', '0')
+        # Cant Hijos,2,15,16,NU,
         this_line += basic_info_legal['Cantidad de Hijos']
-        this_line += basic_info_legal['Trabajador Convencionado 0-No 1-Si']
-        this_line += basic_info_legal['Seguro Colectivo de Vida Obligatorio']
-        this_line += basic_info_legal['Marca de Corresponde Reducción']
+        # CCT,1,17,17,AN,0 y 1 ó F y T
+        this_line += basic_info_legal['Trabajador Convencionado 0-No 1-Si'].replace('T', '1').replace('F', '0')
+        # SVO,1,18,18,AN,0 y 1 ó F y T
+        this_line += basic_info_legal['Seguro Colectivo de Vida Obligatorio'].replace('T', '1').replace('F', '0')
+        # Reducción,1,19,19,AN,0 y 1 ó F y T
+        this_line += basic_info_legal['Marca de Corresponde Reducción'].replace('T', '1').replace('F', '0')
+        # código de tipo de empleador asociado al trabajador,1,20,20,AN,
         this_line += basic_info_legal['Tipo de empresa']
+        # código de tipo de operación,1,21,21,AN,Valor fijo: ?0?
         this_line += basic_info_legal['Tipo de Operación']
+        # código de situación de revista,2,22,23,AN,
         this_line += basic_info_legal['Codigo de Situación']
+        # código de condición,2,225,AN
         this_line += basic_info_legal['Codigo de Condición']
+        # código de actividad,3,26,28,AN,
         this_line += basic_info_legal['Código de Actividad']
-        this_line += basic_info_legal['Código de Modalidad de Contratación']
+        # código de modalidad de contratación,3,29,31,AN
+        this_line += mod_cont
+        # código de siniestrado,2,32,33,AN
         this_line += basic_info_legal['Código de Siniestrado']
+        # código de localidad,2,34,35,AN
         this_line += basic_info_legal['Código de Zona']
+        # Situación de revista 1,2,36,37,AN
         this_line += basic_info_legal['Situación de Revista 1']
+        # Día de inicio situación de revista 1,2,38,39,NU,2 enteros.
         this_line += basic_info_legal['Dia inicio Situación de Revista 1']
+        # Situación de revista 2,2,40,41,AN
         this_line += basic_info_legal['Situación de Revista 2']
+        # Día de inicio situación de revista 2,2,42,43,NU,2 enteros.
         this_line += basic_info_legal['Dia inicio Situación de Revista 2']
+        # Situación de revista 3,2,445,AN
         this_line += basic_info_legal['Situación de Revista 3']
+        # Día de inicio situación de revista 3,2,46,47,NU,2 enteros.
         this_line += basic_info_legal['Dia inicio Situación de Revista 3']
-        this_line += basic_info_legal['Cantidad de días trabajados']
+        # Cantidad de días trabajados,2,48,49,NU,2 enteros.
+        this_line += str(int(basic_info_legal['Cantidad de días trabajados'].replace(',00', '').strip())).zfill(2)
+        # Cantidad de horas trabajadas,3,50,52,NU,"3 enteros.
         this_line += basic_info_legal['Horas trabajadas']
-        this_line += basic_info_legal['Porcentaje de Aporte Adicional SS']
-        this_line += basic_info_legal['Contribucion tarea diferencial (%)']
+        # Porcentaje de aporte adicional de seguridad social,5,53,57,NU,3 enteros y 2 decimales
+        this_line += str(amount_txt_to_integer(basic_info_legal['Porcentaje de Aporte Adicional SS'])).zfill(5)
+        # Porcentaje de contribución por tarea diferencial,5,58,62,NU,3 enteros y 2 decimales.
+        this_line += str(amount_txt_to_integer(basic_info_legal['Contribucion tarea diferencial (%)'])).zfill(5)
+        # código de obra social del trabajador,6,63,68,AN,Según tabla de codificación RNOS
         this_line += basic_info_legal['Código de Obra Social']
+        # Cantidad de adherentes de obra social,2,69,70,NU,2 enteros.
         this_line += basic_info_legal['Cantidad de Adherentes']
 
-        # TODO Next: Completar esto
-        this_line += f'{remuneracion} {no_remunerativo} {aporte_os}'
+        # Importes ---------------------------------------------
+        # Aporte adicional de obra social,15,71,85,NU,
+        # Contribución adicional de obra social,15,86,100,NU,
+        this_line += "0" * 30
+        # Base para el cálculo diferencial de aporte de obra social y FSR (1),15,101,115,NU,
+        this_line += str(adicional_os).zfill(15)
+        # Base para el cálculo diferencial de contribuciones de obra social y FSR (1),15,116,130,NU,
+        this_line += str(adicional_os).zfill(15)
+        # Base para el cálculo diferencial Ley de Riesgos del Trabajo (1),15,131,145,NU,
+        # Remuneración maternidad para ANSeS,15,146,160,NU,
+        this_line += "0" * 30
+        # Remuneración bruta,15,161,175,NU,
+        this_line += str(remuneracion + no_remunerativo).zfill(15)
+        # Base imponible 1,15,176,190,NU,
+        this_line += str(remuneracion_1).zfill(15)
+        # Base imponible 2,15,191,205,NU,
+        this_line += str(remuneracion).zfill(15)
+        # Base imponible 3,15,206,220,NU,
+        this_line += str(remuneracion).zfill(15)
+        # Base imponible 4 15,221,235,NU,
+        this_line += str(remuneracion_4).zfill(15)
+        # Base imponible 5,15,236,250,NU,
+        this_line += str(remuneracion_1).zfill(15)
+        # Base imponible 6,15,251,265,NU,
+        # Base imponible 7,15,266,280,NU,
+        this_line += "0" * 30
+        # Base imponible 8,15,281,295,NU,
+        this_line += str(remuneracion_4).zfill(15)
+        # Base imponible 9,15,296,310,NU,
+        this_line += str(remuneracion_9).zfill(15)
+        # Base para el cálculo diferencial de aporte de Seg. Social,15,311,325,NU,
+        # Base para el cálculo diferencial de contribuciones de Seg. Social,15,326,340,NU,
+        this_line += "0" * 30
+        # Base imponible 10,15,341,355,NU,
+        # Pongo $ 1 de detracción porque da error si no hay error en AFIP!
+        this_line += str(remuneracion_10 - 100).zfill(15)
+        # Importe a detraer (Ley 26.473),15,356,370,NU,
+        # Pongo $ 1 porque da error si no hay error en AFIP!
+        this_line += "100".zfill(15)
 
         resp.append(this_line)
 

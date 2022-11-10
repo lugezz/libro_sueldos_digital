@@ -37,6 +37,7 @@ _No está alcanzado el pago por CBU_
 
 * Configurar 'M'=mes; 'Q'=quincena; 'S'=semanal
 * Configurar días base
+* Si borra liquidación recalcular totales
 * Configurar forma de pago. No acreditación porque requiere CBU
 * Ver cálculo de la Base Adicional OS.
 * Armar un zip de todas las liquidaciones y borrarlas
