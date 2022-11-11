@@ -403,7 +403,8 @@ def advanced_export(request):
     context = {
         'error': '',
         'form': form,
-        'presentaciones_en_pr': presentaciones_en_pr
+        'presentaciones_en_pr': presentaciones_en_pr,
+        'existe_presentacion': 0
     }
 
     if request.method == 'POST':
@@ -411,19 +412,12 @@ def advanced_export(request):
         empresa = Empresa.objects.get(id=id_empresa)
         cuit = empresa.cuit
         periodo = request.POST.get("periodo")
-
         presentacion = Presentacion.objects.filter(user=request.user,
                                                    empresa__id=id_empresa,
                                                    periodo=f'{periodo}-01')
 
-        if not presentacion:
-            this_presentacion = Presentacion.objects.create(user=request.user,
-                                                            empresa=empresa,
-                                                            periodo=f'{periodo}-01')
-        else:
-            this_presentacion = presentacion.first()
-
         per_liq = periodo.replace('-', '')
+
         # Txt F931 subido
         if 'txtF931' in request.FILES:
             # 1) Grabo el txt temporalmente
@@ -433,6 +427,9 @@ def advanced_export(request):
             fs.delete(fpath)
             fs.save(fpath, request.FILES['txtF931'])
 
+            if presentacion:
+                context['existe_presentacion'] = 1
+
             try:
                 context['F931_result'] = get_summary_txtF931(fpath)
             except Exception:
@@ -441,6 +438,13 @@ def advanced_export(request):
 
         # Procesar nomás
         else:
+            if presentacion:
+                presentacion.delete()
+
+            this_presentacion = Presentacion.objects.create(user=request.user,
+                                                            empresa=empresa,
+                                                            periodo=f'{periodo}-01')
+
             return redirect(reverse('export_lsd:advanced_liqs',  kwargs={'pk': this_presentacion.id}))
 
     return render(request, 'export_lsd/export/advanced.html', context)

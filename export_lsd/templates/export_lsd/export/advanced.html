@@ -51,7 +51,7 @@
         <!-- Export Config Detailed  -->
         <div class="col-4"> 
             {% if F931_result %}
-            <div class="card top-selling overflow-auto">
+            <div class="card top-selling overflow-auto f931-result">
                 <h5 id="configTitle" class="card-title text-center">Resumen</h5>
                 <ul id="F.931">
                     {% for key, value in F931_result.items %}
@@ -180,13 +180,33 @@
         })
     });
 
+    // Hide button and f931 if change date or company
+    $(function() {
+        $('#id_periodo').on('change', function(e) {
+            $('.button_submit').hide();
+            $('.f931-result').hide();
+        });
+    });
+
+    $(function() {
+        $('#id_empresa').on('change', function(e) {
+            $('.button_submit').hide();
+            $('.f931-result').hide();
+        });
+    });
+
     $('.button_submit').on('click', function (e) {
         e.preventDefault();
+        let content = "¿Estas seguro de avanzar a la carga de liquidaciones?"
+
+        if ({{ existe_presentacion }} === 1) {
+            content = "Existe ya una presentación para esta empresa y período, ¿Desea sobrescribirla?"
+        }
         $.confirm({
             theme: 'material',
             title: 'Notificación',
             icon: 'fa fa-info',
-            content: '¿Estas seguro de avanzar a la carga de liquidaciones?<br>',
+            content: content + '<br>',
             columnClass: 'small',
             typeAnimated: true,
             cancelButtonClass: 'btn-primary',
