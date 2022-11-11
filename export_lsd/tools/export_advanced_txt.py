@@ -19,8 +19,9 @@ from export_lsd.models import (BulkCreateManager, ConceptoLiquidacion,
                                Empleado, Liquidacion,
                                OrdenRegistro, Presentacion)
 from export_lsd.utils import (amount_txt_to_integer, amount_txt_to_float,
-                              get_value_from_txt, NOT_SIJP,
-                              sync_format)
+                              delete_list_of_liles,
+                              file_compress, get_value_from_txt,
+                              NOT_SIJP, sync_format)
 
 
 def get_summary_txtF931(txt_file: Path) -> dict:
@@ -211,65 +212,72 @@ def process_reg3(concepto_liq: QuerySet) -> str:
     return resp_final
 
 
-def process_reg4(txt_info: str) -> str:
-    resp = []
+def process_reg4_line(txt_info_line: str) -> str:
+    resp = ''
     reg4_qs = OrdenRegistro.objects.filter(tiporegistro__order=4)
 
-    for legajo in txt_info:
-        linea = ''
-        mod_cont = int(get_value_from_txt(legajo, 'Código de Modalidad de Contratación'))
-        rem2 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
-        rem4 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 4'))
-        rem8 = amount_txt_to_integer(get_value_from_txt(legajo, 'Rem.Dec.788/05 - Rem Impon. 8'))
-        rem9 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 9'))
-        rem10 = amount_txt_to_integer(get_value_from_txt(legajo, 'Remuneración Imponible 2'))
-        detr = amount_txt_to_integer(get_value_from_txt(legajo, 'Importe a detraer Ley 27430'))
+    mod_cont = int(get_value_from_txt(txt_info_line, 'Código de Modalidad de Contratación'))
+    rem2 = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Remuneración Imponible 2'))
+    rem4 = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Remuneración Imponible 4'))
+    rem8 = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Rem.Dec.788/05 - Rem Impon. 8'))
+    rem9 = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Remuneración Imponible 9'))
+    rem10 = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Remuneración Imponible 2'))
+    detr = amount_txt_to_integer(get_value_from_txt(txt_info_line, 'Importe a detraer Ley 27430'))
 
-        for reg in reg4_qs:
-            if reg.formatof931:
-                # Si está lo vinculo puliendo formato
-                tmp_linea = sync_format(get_value_from_txt(legajo, reg.formatof931.name), reg.long, reg.type)
-                if (reg.formatof931.name == 'Cónyuge' or
-                        reg.formatof931.name == 'Trabajador Convencionado 0-No 1-Si' or
-                        reg.formatof931.name == 'Seguro Colectivo de Vida Obligatorio' or
-                        reg.formatof931.name == 'Marca de Corresponde Reducción'):
+    for reg in reg4_qs:
+        if reg.formatof931:
+            # Si está lo vinculo puliendo formato
+            tmp_linea = sync_format(get_value_from_txt(txt_info_line, reg.formatof931.name), reg.long, reg.type)
+            if (reg.formatof931.name == 'Cónyuge' or
+                    reg.formatof931.name == 'Trabajador Convencionado 0-No 1-Si' or
+                    reg.formatof931.name == 'Seguro Colectivo de Vida Obligatorio' or
+                    reg.formatof931.name == 'Marca de Corresponde Reducción'):
 
-                    tmp_linea = tmp_linea.replace('T', '1').replace('F', '0')
+                tmp_linea = tmp_linea.replace('T', '1').replace('F', '0')
 
-                linea += tmp_linea
+            resp += tmp_linea
+
+        else:
+            # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
+            if reg.name == 'Identificación del tipo de registro':
+                resp += '04'
+            elif reg.name == 'Base imponible 10':
+                rem10 = rem10 - detr
+
+                if detr == 0 or mod_cont in NOT_SIJP:
+                    rem10 = 0
+
+                resp += str(rem10).zfill(15)
+            elif reg.name == 'Base para el cálculo diferencial de aporte de obra social y FSR (1)':
+
+                # Valido R4
+                # R4 = Rem + NR OS y Sind + Ap.Ad.OS
+                # Ap.Ad.OS = R4 - Rem - NR OS y Sind
+                tipo_nr = '2'
+                resta = rem2 if tipo_nr != '2' else rem9
+                aa_os = max(0, rem4 - resta)
+                resp += str(aa_os).zfill(15)
+
+            elif reg.name == 'Base para el cálculo diferencial de contribuciones de obra social y FSR (1)':
+                # Valido R8
+                # R8 = Rem + NR OS y Sind + Ct.Ad.OS
+                # Ct.Ad.OS = R8 - Rem - NR OS y Sind
+                tipo_nr = '2'
+                resta = rem2 if tipo_nr != '2' else rem9
+                aa_os = max(0, rem8 - resta)
+                resp += str(aa_os).zfill(15)
 
             else:
-                # Si no está, cargo los casos específicos y dejo vacío el resto (0 números y " " texto)
-                if reg.name == 'Identificación del tipo de registro':
-                    linea += '04'
-                elif reg.name == 'Base imponible 10':
-                    rem10 = rem10 - detr
+                resp += "0" * reg.long
 
-                    if detr == 0 or mod_cont in NOT_SIJP:
-                        rem10 = 0
+    return resp
 
-                    linea += str(rem10).zfill(15)
-                elif reg.name == 'Base para el cálculo diferencial de aporte de obra social y FSR (1)':
 
-                    # Valido R4
-                    # R4 = Rem + NR OS y Sind + Ap.Ad.OS
-                    # Ap.Ad.OS = R4 - Rem - NR OS y Sind
-                    tipo_nr = '2'
-                    resta = rem2 if tipo_nr != '2' else rem9
-                    aa_os = max(0, rem4 - resta)
-                    linea += str(aa_os).zfill(15)
+def process_reg4(txt_info: str) -> str:
+    resp = []
 
-                elif reg.name == 'Base para el cálculo diferencial de contribuciones de obra social y FSR (1)':
-                    # Valido R8
-                    # R8 = Rem + NR OS y Sind + Ct.Ad.OS
-                    # Ct.Ad.OS = R8 - Rem - NR OS y Sind
-                    tipo_nr = '2'
-                    resta = rem2 if tipo_nr != '2' else rem9
-                    aa_os = max(0, rem8 - resta)
-                    linea += str(aa_os).zfill(15)
-
-                else:
-                    linea += "0" * reg.long
+    for legajo in txt_info:
+        linea = process_reg4_line(legajo)
 
         resp.append(linea)
 
@@ -333,6 +341,21 @@ def process_reg4_from_liq(leg_liqs: QuerySet, concepto_liq: QuerySet, txt_info: 
         empleado = Empleado.objects.get(id=id_legajo['empleado'])
         cuil = empleado.cuil
         txt_legajo = get_specific_F931_txt_line(str(cuil), txt_info)
+
+        # Si el empleado no está incluido en futuras liquidaciones queda el txt final
+        presentacion = concepto_liq.first().liquidacion.presentacion
+        nro_liq = concepto_liq.first().liquidacion.nroLiq
+        fut_liq = ConceptoLiquidacion.objects.filter(
+            empleado=empleado,
+            liquidacion__presentacion=presentacion,
+            liquidacion__nroLiq__gt=nro_liq
+            ).count()
+        if fut_liq == 0:
+            this_line = process_reg4_line(txt_legajo)
+            resp.append(this_line)
+            continue
+        # ---------------------------------------------------------------
+
         basic_info_legal = get_basic_f931_info(txt_legajo)
         mod_cont = basic_info_legal['Código de Modalidad de Contratación']
 
@@ -484,6 +507,12 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
     for i, liquidacion in enumerate(liquidaciones):
         conceptos = ConceptoLiquidacion.objects.filter(liquidacion=liquidacion)
         legajos = conceptos.values('empleado').distinct()
+        specific_F931_txt_lines = []
+
+        for legajo in legajos:
+            legajo_cuil = Empleado.objects.get(id=legajo['empleado']).cuil
+            specific_F931_txt_lines.append(get_specific_F931_txt_line(legajo_cuil, txt_clean_info))
+
         reg1 = process_reg1(cuit=cuit,
                             periodo=per_liq,
                             employees=liquidacion.employees,
@@ -491,15 +520,9 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         reg2 = process_reg2(legajos, liquidacion.payday, cuit)
         reg3 = process_reg3(conceptos)
         if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:
-            reg4 = process_reg4(txt_clean_info)
+            reg4 = process_reg4(specific_F931_txt_lines)
         else:
-            # Para el registro 4 va la información acumulada
-            conceptos_ac = ConceptoLiquidacion.objects.filter(
-                liquidacion__nroLiq__lte=liquidacion.nroLiq,
-                liquidacion__presentacion=liquidacion.presentacion
-                )
-            legajos = conceptos_ac.values('empleado').distinct()
-            reg4 = process_reg4_from_liq(legajos, conceptos_ac, txt_clean_info)
+            reg4 = process_reg4_from_liq(legajos, conceptos, specific_F931_txt_lines)
 
         reg5 = ''
 
@@ -522,7 +545,16 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
     if len(liquidaciones_list) == 1:
         resp = liquidaciones_list[0]
     else:
-        pass
+        liquidaciones_list_2 = [f'static/{x}' for x in liquidaciones_list]
+        zip_output_file_name = f'{fpath}.zip'
+        file_compress(liquidaciones_list_2, zip_output_file_name)
+        resp = zip_output_file_name.replace('static/', '')
+
+        # Borro txts
+        delete_list_of_liles(liquidaciones_list_2)
+        # Marco presentación como realizada
+        presentacion_qs.closed = True
+        presentacion_qs.save()
 
     return resp
 

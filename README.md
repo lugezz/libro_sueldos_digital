@@ -40,9 +40,9 @@ _No está alcanzado el pago por CBU_
 * Si borra liquidación recalcular totales
 * Configurar forma de pago. No acreditación porque requiere CBU
 * Ver cálculo de la Base Adicional OS.
-* Armar un zip de todas las liquidaciones y borrarlas
-* Luego de generado el archivo final, borrar txt y zip. Identificar el período como realizado
-
+* Borrar los txt temporales
+* Al crear una presentación ver si hay una cerrada y preguntar si sobreescribir
+* Permitir descargar archivos de presentaciones cerradas
 
 ---
 

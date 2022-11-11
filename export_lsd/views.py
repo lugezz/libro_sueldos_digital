@@ -397,7 +397,7 @@ def advanced_export(request):
         messages.error(request, "Debe tener al menos asociada una empresa")
         return redirect(reverse_lazy('export_lsd:empresa_list'))
 
-    presentaciones_en_pr = Presentacion.objects.filter(user=request.user).order_by('-periodo')
+    presentaciones_en_pr = Presentacion.objects.filter(user=request.user, closed=False).order_by('-periodo')
     form = PeriodoForm(request.POST or None)
 
     context = {
