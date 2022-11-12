@@ -33,10 +33,6 @@ _No está alcanzado el pago por CBU_
 #### Exportación avanzada
 
 * Configurar 'M'=mes; 'Q'=quincena; 'S'=semanal
-* Configurar días base
-* Si borra liquidación recalcular totales
-* Configurar forma de pago. No acreditación porque requiere CBU
-* Borrar los txt temporales
 
 ---
 
@@ -46,6 +42,9 @@ _No está alcanzado el pago por CBU_
 * Agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
 * Eventuales
 * Ver cálculo de la Base Adicional OS.
+* Configurar días base
+* Configurar forma de pago. No acreditación porque requiere CBU
+
 
 #### Empleados
 * Borrado masivo y ver si exportación conviene pisar

@@ -65,63 +65,68 @@ def get_summary_txtF931(txt_file: Path) -> dict:
     return result
 
 
-def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
-    empleados = set(df_liq['Leg'].tolist())
-
-    result = {
-        'empleados': len(empleados),
+def update_presentacion_info(id_presentacion: int) -> dict:
+    resp = {
+        'empleados': 0,
         'remunerativos': 0.0,
         'no_remunerativos': 0.0,
     }
 
+    liquidaciones = Liquidacion.objects.filter(presentacion__id=id_presentacion)
+    conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion__presentacion__id=id_presentacion)
+
+    resp['remunerativos'] = liquidaciones.aggregate(Sum('remunerativos'))['remunerativos__sum']
+    resp['no_remunerativos'] = liquidaciones.aggregate(Sum('no_remunerativos'))['no_remunerativos__sum']
+    resp['empleados'] = conc_liqs.values('empleado').distinct().count()
+
+    Presentacion.objects.update(
+        employees=resp['empleados'],
+        remunerativos=resp['remunerativos'],
+        no_remunerativos=resp['no_remunerativos'],
+    )
+
+    return resp
+
+
+def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
     bulk_mgr = BulkCreateManager()
     presentacion = Presentacion.objects.get(id=id_presentacion)
     payday_str = payday.strftime('%Y-%m-%d')
     empresa = presentacion.empresa
     liquidacion = Liquidacion.objects.create(nroLiq=nro_liq, presentacion=presentacion, payday=payday_str)
 
+    empleados = set()
+    remunerativo = 0.0
+    no_remunerativo = 0.0
+
     for index, row in df_liq.iterrows():
+        tipo = row['Tipo']
+        importe = row['Monto']
+
+        empleados.add(row['Leg'])
+        if tipo == 'Rem':
+            remunerativo += importe
+
+        if tipo[:2] == 'NR':
+            no_remunerativo += importe
+
         empleado = Empleado.objects.get(leg=row["Leg"], empresa=empresa)
-
-        if row['Tipo'] == 'Rem':
-            result['remunerativos'] += float(row['Monto'])
-
-        if row['Tipo'] == 'NR':
-            result['no_remunerativos'] += float(row['Monto'])
-
-        importe = -row['Monto'] if row['Tipo'] == 'Ap' else row['Monto']
-
         bulk_mgr.add(ConceptoLiquidacion(liquidacion=liquidacion,
                                          empleado=empleado,
                                          concepto=row['Concepto'],
                                          cantidad=row['Cant'],
                                          importe=importe,
-                                         tipo=row['Tipo']))
+                                         tipo=tipo))
     bulk_mgr.done()
 
     # Update Liquidación
-    liquidacion.employees = result['empleados']
-    liquidacion.remunerativos = result['remunerativos']
-    liquidacion.no_remunerativos = result['no_remunerativos']
+    liquidacion.employees = len(empleados)
+    liquidacion.remunerativos = remunerativo
+    liquidacion.no_remunerativos = no_remunerativo
     liquidacion.save()
 
     # Update Presentación
-    presentacion.remunerativos += result['remunerativos']
-    presentacion.no_remunerativos += result['no_remunerativos']
-    liquidaciones = Liquidacion.objects.filter(presentacion=presentacion).exclude(nroLiq=nro_liq)
-
-    for liq in liquidaciones:
-        conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion=liq)
-        if conc_liqs:
-            for conc_liq in conc_liqs:
-                empleados.add(conc_liq.empleado.leg)
-
-    presentacion.employees = len(empleados)
-    presentacion.save()
-
-    result['empleados'] = presentacion.employees
-    result['remunerativos'] = presentacion.remunerativos
-    result['no_remunerativos'] = presentacion.no_remunerativos
+    result = update_presentacion_info(id_presentacion)
 
     return result
 
@@ -167,7 +172,7 @@ def process_reg2(leg_liqs: QuerySet, payday: datetime.date, cuit: str) -> str:
         cuil = empleado.cuil
         leg = str(empleado.leg).zfill(10)
 
-        area = empleado.area.ljust(50)
+        area = " " * 50 if not empleado.area else empleado.area.ljust(50)
         fecha_pago = payday.strftime('%Y%m%d')
         forma_pago = 1
         cbu = " " * 22
@@ -277,6 +282,9 @@ def process_reg4(txt_info: str) -> str:
     resp = []
 
     for legajo in txt_info:
+        if not legajo:
+            continue
+
         linea = process_reg4_line(legajo)
 
         resp.append(linea)
@@ -511,7 +519,9 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
 
         for legajo in legajos:
             legajo_cuil = Empleado.objects.get(id=legajo['empleado']).cuil
-            specific_F931_txt_lines.append(get_specific_F931_txt_line(legajo_cuil, txt_clean_info))
+            this_line = get_specific_F931_txt_line(legajo_cuil, txt_clean_info)
+            if this_line:
+                specific_F931_txt_lines.append(this_line)
 
         reg1 = process_reg1(cuit=cuit,
                             periodo=per_liq,
@@ -520,6 +530,8 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         reg2 = process_reg2(legajos, liquidacion.payday, cuit)
         reg3 = process_reg3(conceptos)
         if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:
+            if not specific_F931_txt_lines:
+                raise Exception('Cuiles no encontrados en nómina, por favor solucionar el inconveniente')
             reg4 = process_reg4(specific_F931_txt_lines)
         else:
             reg4 = process_reg4_from_liq(legajos, conceptos, specific_F931_txt_lines)
@@ -552,9 +564,10 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
 
         # Borro txts
         delete_list_of_liles(liquidaciones_list_2)
-        # Marco presentación como realizada
-        presentacion_qs.closed = True
-        presentacion_qs.save()
+
+    # Marco presentación como realizada
+    presentacion_qs.closed = True
+    presentacion_qs.save()
 
     return resp
 
@@ -590,6 +603,13 @@ def get_final_txts(user: SimpleLazyObject, id_presentacion: int) -> Path:
         return resp
 
     # Listo vamos con el procesamiento
-    resp['path'] = process_presentacion(presentacion_qs)
+    try:
+        resp['path'] = process_presentacion(presentacion_qs)
+        # Por el momento no es lo mejor borrar
+        # if os.path.isfile(fpath):
+        #    os.remove(fpath)
+
+    except Exception as e:
+        resp['error'] = e
 
     return resp
