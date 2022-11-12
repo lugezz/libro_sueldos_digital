@@ -13,6 +13,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='liquidacion',
             name='tipo_liq',
-            field=models.CharField(choices=[('M', 'Mes'), ('Q', 'Quincena'), ('D', 'Días'), ('H', 'Horas')], default='M', max_length=1, verbose_name='Tipo Liq.'),
+            field=models.CharField(choices=[('M', 'Mes'), ('Q', 'Quincena'),
+                                            ('D', 'Días'), ('H', 'Horas')],
+                                   default='M', max_length=1, verbose_name='Tipo Liq.'),
         ),
     ]

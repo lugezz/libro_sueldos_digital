@@ -23,6 +23,10 @@ from export_lsd.tools.import_empleados import get_employees
 EXPORT_TITLES = ['Leg', 'Concepto', 'Cant', 'Monto', 'Tipo']
 
 
+def error_404(request, exception):
+    return render(request, 'export_lsd/404.html')
+
+
 # ------------- DASHBOARD ------------------------------------------------
 class HomeView(TemplateView):
     template_name = 'export_lsd/home.html'
