@@ -37,7 +37,12 @@
             {{ form.nroLiq }}
         </div>
 
-        <div class="col-7">
+        <div class="col-2">
+            <p class="mb-1">Tipo</p>
+            {{ form.tipo_liq }}
+        </div>
+
+        <div class="col-4">
             <p class="mb-1">Seleccione planilla liquidación</p>
             {{ form.xlsx_liq}}
             <a href="{% static 'other/Import_Liquidacion.xlsx' %}">

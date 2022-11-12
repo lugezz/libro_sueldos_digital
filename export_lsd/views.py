@@ -504,6 +504,7 @@ def advanced_export_liqs(request, pk: int):
         else:
             df_liq = pd.read_excel(request.FILES['xlsx_liq'])
             nro_liq = request.POST['nroLiq']
+            tipo_liq = request.POST['tipo_liq']
             payday = datetime.datetime.strptime(request.POST['payday'], '%d/%m/%Y')
 
             # Validación 1 - Titulos
@@ -525,7 +526,7 @@ def advanced_export_liqs(request, pk: int):
                 return redirect(reverse_lazy('export_lsd:empleado_list'))
 
             # Procesar la Liquidación
-            result = process_liquidacion(pk, nro_liq, payday, df_liq)
+            result = process_liquidacion(pk, nro_liq, payday, df_liq, tipo_liq)
             context['empleados'] = result.get('empleados', 0)
             context['remunerativos'] = result.get('remunerativos', 0)
             context['no_remunerativos'] = result.get('no_remunerativos', 0)

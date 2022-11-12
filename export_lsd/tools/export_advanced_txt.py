@@ -73,11 +73,12 @@ def update_presentacion_info(id_presentacion: int) -> dict:
     }
 
     liquidaciones = Liquidacion.objects.filter(presentacion__id=id_presentacion)
-    conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion__presentacion__id=id_presentacion)
+    if liquidaciones:
+        conc_liqs = ConceptoLiquidacion.objects.filter(liquidacion__presentacion__id=id_presentacion)
 
-    resp['remunerativos'] = liquidaciones.aggregate(Sum('remunerativos'))['remunerativos__sum']
-    resp['no_remunerativos'] = liquidaciones.aggregate(Sum('no_remunerativos'))['no_remunerativos__sum']
-    resp['empleados'] = conc_liqs.values('empleado').distinct().count()
+        resp['remunerativos'] = liquidaciones.aggregate(Sum('remunerativos'))['remunerativos__sum']
+        resp['no_remunerativos'] = liquidaciones.aggregate(Sum('no_remunerativos'))['no_remunerativos__sum']
+        resp['empleados'] = conc_liqs.values('empleado').distinct().count()
 
     Presentacion.objects.update(
         employees=resp['empleados'],
@@ -88,12 +89,13 @@ def update_presentacion_info(id_presentacion: int) -> dict:
     return resp
 
 
-def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame) -> dict:
+def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df_liq: DataFrame, tipo_liq: str) -> dict:
     bulk_mgr = BulkCreateManager()
     presentacion = Presentacion.objects.get(id=id_presentacion)
     payday_str = payday.strftime('%Y-%m-%d')
     empresa = presentacion.empresa
-    liquidacion = Liquidacion.objects.create(nroLiq=nro_liq, presentacion=presentacion, payday=payday_str)
+    liquidacion = Liquidacion.objects.create(nroLiq=nro_liq, presentacion=presentacion,
+                                             payday=payday_str, tipo_liq=tipo_liq)
 
     empleados = set()
     remunerativo = 0.0
@@ -131,7 +133,7 @@ def process_liquidacion(id_presentacion: int, nro_liq: int, payday: datetime, df
     return result
 
 
-def process_reg1(cuit: str, periodo: datetime.date, employees: int, nro_liq: int) -> str:
+def process_reg1(cuit: str, periodo: datetime.date, employees: int, nro_liq: int, tipo_liq: str) -> str:
     """
     Identificacion del tipo de registro	2	1	2	Alfabético
     CUIT del empleador	11	3	13	Numérico
@@ -145,7 +147,7 @@ def process_reg1(cuit: str, periodo: datetime.date, employees: int, nro_liq: int
 
     resp = f'01{cuit}SJ'
     resp += periodo
-    resp += 'M'
+    resp += tipo_liq
     resp += str(nro_liq).zfill(5)
 
     ds_base = 30
@@ -526,7 +528,8 @@ def process_presentacion(presentacion_qs: Presentacion) -> Path:
         reg1 = process_reg1(cuit=cuit,
                             periodo=per_liq,
                             employees=liquidacion.employees,
-                            nro_liq=liquidacion.nroLiq)
+                            nro_liq=liquidacion.nroLiq,
+                            tipo_liq=liquidacion.tipo_liq)
         reg2 = process_reg2(legajos, liquidacion.payday, cuit)
         reg3 = process_reg3(conceptos)
         if liquidaciones.count() == 1 or i == len(liquidaciones) - 1:

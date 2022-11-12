@@ -177,10 +177,15 @@ class LiquidacionForm(ModelForm):
     class Meta:
         model = Liquidacion
 
-        fields = ['payday', 'nroLiq', 'xlsx_liq']
+        fields = ['payday', 'nroLiq', 'tipo_liq', 'xlsx_liq']
 
         widgets = {
             'nroLiq': Select(
+                attrs={
+                    'class': "form-select mb-3"
+                }
+            ),
+            'tipo_liq': Select(
                 attrs={
                     'class': "form-select mb-3"
                 }

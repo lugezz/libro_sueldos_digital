@@ -25,6 +25,13 @@ TIPO_NR = [
     ('2', 'Base Sindicato y Obra Social')
 ]
 
+TIPO_LIQ = [
+    ('M', 'Mes'),
+    ('Q', 'Quincena'),
+    ('D', 'Días'),
+    ('H', 'Horas')
+]
+
 
 class TipoRegistro(models.Model):
     name = models.CharField(max_length=120)
@@ -162,6 +169,7 @@ class Liquidacion(models.Model):
     employees = models.PositiveSmallIntegerField(default=0)
     remunerativos = models.FloatField(default=0.0)
     no_remunerativos = models.FloatField(default=0.0)
+    tipo_liq = models.CharField(max_length=1, choices=TIPO_LIQ, default='M', verbose_name='Tipo Liq.')
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
