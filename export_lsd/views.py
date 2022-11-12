@@ -27,15 +27,16 @@ class HomeView(TemplateView):
     template_name = 'export_lsd/home.html'
 
     def get_context_data(self, **kwargs):
-        query_historia = Presentacion.objects.filter(empresa__user=self.request.user)
-        today = datetime.date.today()
-        last_month = today.replace(day=1) - datetime.timedelta(days=1)
-        last_month_str = last_month.strftime("%Y-%m")
+        presentaciones = Presentacion.objects.filter(empresa__user=self.request.user, closed=True)
+        presentaciones_this_year = presentaciones.filter(created__year=datetime.datetime.today().year).count()
+        presentaciones_top5 = presentaciones.order_by('-created')[:5]
 
         context = super().get_context_data(**kwargs)
-        context['query'] = query_historia
-        context['this_month'] = last_month_str
-        context['listado'] = last_month_str
+        context['presentaciones'] = presentaciones
+        context['presentaciones_this_year'] = presentaciones_this_year
+        context['presentaciones_top5'] = presentaciones_top5
+        context['empresas'] = Empresa.objects.filter(user=self.request.user).count()
+        context['empleados'] = Empleado.objects.filter(empresa__user=self.request.user).count()
 
         return context
 

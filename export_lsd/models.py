@@ -136,6 +136,17 @@ class Presentacion(models.Model):
         self.user = user
         return super().save(force_insert, force_update, using, update_fields)
 
+    def get_children(self):
+        return Liquidacion.objects.filter(presentacion=self).count()
+
+    def get_download_url(self):
+        this_user = get_current_user().username
+        cuit = self.empresa.cuit
+        periodo = self.periodo.strftime('%Y%m')
+        extension = 'zip' if self.get_children() > 1 else 'txt'
+
+        return f'temp/finaltxt_{this_user}_{cuit}_{periodo}.{extension}'
+
     class Meta:
         verbose_name_plural = 'Presentaciones'
 

@@ -1,4 +1,6 @@
 {% extends "export_lsd/base.html" %}
+{% load static %}
+
 {% block title %} Exportador LSD {% endblock title%}
 {% block content %}
 
@@ -33,7 +35,7 @@
                   <i class="fas fa-building"></i>
                 </div>
                 <div class="ps-3">
-                  <h6>145</h6>
+                  <h6>{{ empresas }}</h6>
                 </div>
               </div>
             </div>
@@ -59,7 +61,7 @@
                   <i class="fas fa-user-friends"></i>
                 </div>
                 <div class="ps-3">
-                  <h6>364</h6>
+                  <h6>{{ empleados }}</h6>
                 </div>
               </div>
             </div>
@@ -79,8 +81,9 @@
                   <i class="fas fa-history"></i>
                 </div>
                 <div class="ps-3">
-                  <h6>34</h6>
-                  <span class="text-success small pt-1 fw-bold">12</span> <span class="text-muted small pt-2 ps-1">el último año</span>
+                  <h6>{{ presentaciones.count }}</h6>
+                  <span class="text-success small pt-1 fw-bold">{{ presentaciones_this_year }}</span>
+                  <span class="text-muted small pt-2 ps-1">en este año</span>
 
                 </div>
               </div>
@@ -99,28 +102,30 @@
               <table class="table table-borderless">
                 <thead>
                   <tr>
-                    <th scope="col">Id</th>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Empresa</th>
-                    <th scope="col">Cant. Liquid.</th>
-                    <th scope="col">Empleados</th>
+                    <th scope="col" class="text-center">Fecha</th>
+                    <th scope="col" class="text-center">Empresa</th>
+                    <th scope="col" class="text-center">Cant. Liquid.</th>
+                    <th scope="col" class="text-center">Empleados</th>
+                    <th scope="col" class="text-center">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td><a href="#" class="text-primary fw-bold">10</a></td>
-                    <td>13/10/2022</td>
-                    <td>Que lo que SRL</td>
-                    <td>4</td>
-                    <td>124</td>
-                  </tr>
-                  <tr>
-                    <td><a href="#" class="text-primary fw-bold">10</a></td>
-                    <td>13/10/2022</td>
-                    <td>Que lo que SRL</td>
-                    <td>4</td>
-                    <td>124</td>
-                  </tr>
+                  {% for presentacion in presentaciones_top5 %}
+                    <tr>
+                      <td class="text-center">{{ presentacion.created|date:"d/m/Y" }}</td>
+                      <td>{{ presentacion.empresa.name }}</td>
+                      <td class="text-center">{{ presentacion.get_children }}</td>
+                      <td class="text-center">{{ presentacion.employees }}</td>
+                      <td class="text-center">
+                        <a 
+                          class="btn btn-outline-success btn-sm"
+                          href="{% static presentacion.get_download_url %}"
+                        >
+                          <i class="fas fa-file-download"></i>
+                        </a>
+                    </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
               </table>
 
