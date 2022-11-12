@@ -102,11 +102,12 @@
               <table class="table table-borderless">
                 <thead>
                   <tr>
-                    <th scope="col" class="text-center">Fecha</th>
-                    <th scope="col" class="text-center">Empresa</th>
-                    <th scope="col" class="text-center">Cant. Liquid.</th>
-                    <th scope="col" class="text-center">Empleados</th>
-                    <th scope="col" class="text-center">Acción</th>
+                    <th scope="col" class="text-center" style="width: 15%;">Fecha</th>
+                    <th scope="col" class="text-center" style="width: 40%;">Empresa</th>
+                    <th scope="col" class="text-center" style="width: 10%;">Período</th>
+                    <th scope="col" class="text-center" style="width: 10%;">Liqs.</th>
+                    <th scope="col" class="text-center" style="width: 10%;">Empleados</th>
+                    <th scope="col" class="text-center" style="width: 15%;">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -114,6 +115,7 @@
                     <tr>
                       <td class="text-center">{{ presentacion.created|date:"d/m/Y" }}</td>
                       <td>{{ presentacion.empresa.name }}</td>
+                      <td class="text-center">{{ presentacion.periodo|date:"m/Y" }}</td>
                       <td class="text-center">{{ presentacion.get_children }}</td>
                       <td class="text-center">{{ presentacion.employees }}</td>
                       <td class="text-center">

@@ -147,6 +147,10 @@ class Presentacion(models.Model):
 
         return f'temp/finaltxt_{this_user}_{cuit}_{periodo}.{extension}'
 
+    def toJSON(self):
+        item = model_to_dict(self)
+        return item
+
     class Meta:
         verbose_name_plural = 'Presentaciones'
 

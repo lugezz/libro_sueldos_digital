@@ -575,6 +575,38 @@ class LiquidacionDeleteView(LoginRequiredMixin, DeleteView):
         return JsonResponse(data)
 
 
+class PresentacionListView(LoginRequiredMixin, ListView):
+    model = Presentacion
+    template_name = 'export_lsd/export/history.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return Presentacion.objects.filter(user=self.request.user, closed=True).order_by('-created')[:50]
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        try:
+            action = request.POST['action']
+            if action == 'searchdata':
+                data = []
+                for i in Presentacion.objects.filter(user=self.request.user, closed=True):
+                    data.append(i.toJSON())
+            else:
+                data['error'] = 'Ha ocurrido un error'
+        except Exception as e:
+            data['error'] = str(e)
+        return JsonResponse(data, safe=False)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Listado de Presentaciones'
+        context['list_url'] = reverse_lazy('export_lsd:presentacion_list')
+        context['entity'] = 'Presentaciones'
+        return context
+
+
 # ------------- CONFIGURACIÓN EXPORTACIÓN BÁSICA ------------------------------------------------
 class ConfigEBListView(LoginRequiredMixin, ListView):
     model = BasicExportConfig

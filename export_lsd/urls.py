@@ -9,7 +9,8 @@ from export_lsd.views import (advanced_export, advanced_export_liqs, basic_expor
                               EmpleadoCreateView, EmpleadoDeleteView, EmpleadoListView,
                               EmpleadoUpdateView, EmpresaCreateView, EmpresaDeleteView,
                               EmpresaListView, EmpresaUpdateView,
-                              LiquidacionDeleteView, PresentacionDeleteView)
+                              LiquidacionDeleteView,
+                              PresentacionDeleteView, PresentacionListView)
 
 app_name = 'export_lsd'
 
@@ -40,12 +41,15 @@ urlpatterns = [
     path('basic/', basic_export, name='basic'),
     path('import-empleados/', import_empleados, name='import_empleados'),
 
-    # --- Advanced
+    # Advanced
     path('advanced/', advanced_export, name='advanced'),
     path('advanced/liqs/<int:pk>', advanced_export_liqs, name='advanced_liqs'),
     path('advanced/get-txts/<int:pk>', get_final_txts, name='advanced_get_txt'),
     path('advanced/delete/<int:pk>', PresentacionDeleteView.as_view(), name='advanced_delete'),
     path('advanced/liq/delete/<int:pk>', LiquidacionDeleteView.as_view(), name='advanced_liq_delete'),
+
+    # Presentaciones
+    path('presentaciones/', PresentacionListView.as_view(), name='presentacion_list'),
 
     # Actualizaciones BD
     path('exportadb/', exportaDB),
