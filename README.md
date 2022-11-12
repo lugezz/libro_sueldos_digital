@@ -50,4 +50,3 @@ _No está alcanzado el pago por CBU_
 * Borrado masivo y ver si exportación conviene pisar
 
 #### General
-* Manejador de 404
