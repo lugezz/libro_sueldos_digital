@@ -1,5 +1,6 @@
 import re
 
+from django.utils.functional import SimpleLazyObject
 import pandas as pd
 from pathlib import Path
 
@@ -12,7 +13,7 @@ def is_positive_number(str_num: str) -> bool:
     return re.match(num_format, str_num)
 
 
-def get_employees(file_import: Path) -> dict:
+def get_employees(file_import: Path, this_user: SimpleLazyObject) -> dict:
     employees_dict = {
         'error': '',
         'results': set(),
@@ -27,7 +28,7 @@ def get_employees(file_import: Path) -> dict:
             employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT Empresa']} Inválido")
             continue
 
-        if not get_company_name(row['CUIT Empresa']):
+        if not get_company_name(row['CUIT Empresa'], this_user):
             employees_dict['invalid_data'].append(f"Línea: {index} - CUIT {row['CUIT Empresa']} inexistente")
             continue
 
@@ -39,7 +40,7 @@ def get_employees(file_import: Path) -> dict:
             employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} Inválido")
             continue
 
-        if get_empleado_name(str(row['CUIT Empresa']), str(row['Leg'])):
+        if get_empleado_name(str(row['CUIT Empresa']), str(row['Leg']), this_user):
             employees_dict['invalid_data'].append(f"Línea: {index} - L.{row['Leg']} - CUIT {row['CUIT Empresa']} ya existe")
             continue
 
@@ -52,16 +53,16 @@ def get_employees(file_import: Path) -> dict:
     return employees_dict
 
 
-def get_company_name(cuit: str) -> str:
-    qs = Empresa.objects.filter(cuit=cuit)
+def get_company_name(cuit: str, this_user: SimpleLazyObject) -> str:
+    qs = Empresa.objects.filter(cuit=cuit, user=this_user)
 
     res = '' if not qs else qs.first().name
 
     return res
 
 
-def get_empleado_name(cuit: str, leg: str) -> str:
-    qs = Empleado.objects.filter(leg=leg, empresa__cuit=cuit)
+def get_empleado_name(cuit: str, leg: str, this_user: SimpleLazyObject) -> str:
+    qs = Empleado.objects.filter(leg=leg, empresa__cuit=cuit, empresa__user=this_user)
 
     res = '' if not qs else qs.first().name
 

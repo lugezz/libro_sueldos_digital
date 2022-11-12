@@ -29,9 +29,6 @@ _No está alcanzado el pago por CBU_
 ---
 
 ### TODO List
-#### Panel Control
-
-* Resumen, cantidad de liquidaciones, empleados y total remuneración
 
 #### Exportación avanzada
 
@@ -39,10 +36,7 @@ _No está alcanzado el pago por CBU_
 * Configurar días base
 * Si borra liquidación recalcular totales
 * Configurar forma de pago. No acreditación porque requiere CBU
-* Ver cálculo de la Base Adicional OS.
 * Borrar los txt temporales
-* Al crear una presentación ver si hay una cerrada y preguntar si sobreescribir
-* Permitir descargar archivos de presentaciones cerradas
 
 ---
 
@@ -51,6 +45,7 @@ _No está alcanzado el pago por CBU_
 #### Exportación avanzada
 * Agregar parametrización de conceptos para no tener la necesidad de la columna Tipo
 * Eventuales
+* Ver cálculo de la Base Adicional OS.
 
 #### Empleados
 * Borrado masivo y ver si exportación conviene pisar

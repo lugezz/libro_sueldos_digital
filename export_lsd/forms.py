@@ -59,13 +59,10 @@ class EmpresaForm(ModelForm):
 class EmpleadoForm(ModelForm):
     cuil = CuitCuilField()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # self.fields['empleado.name'].widget.attrs['autofocus'] = True
-
     class Meta:
         model = Empleado
         fields = '__all__'
+
         widgets = {
             'empleado.name': TextInput(
                 attrs={

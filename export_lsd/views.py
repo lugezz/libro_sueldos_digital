@@ -55,13 +55,16 @@ class EmpresaListView(LoginRequiredMixin, ListView):
             action = request.POST['action']
             if action == 'searchdata':
                 data = []
-                for i in Empresa.objects.all():
+                for i in Empresa.objects.filter(user=self.request.user):
                     data.append(i.toJSON())
             else:
                 data['error'] = 'Ha ocurrido un error'
         except Exception as e:
             data['error'] = str(e)
         return JsonResponse(data, safe=False)
+
+    def get_queryset(self):
+        return Empresa.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -182,13 +185,16 @@ class EmpleadoListView(LoginRequiredMixin, ListView):
             action = request.POST['action']
             if action == 'searchdata':
                 data = []
-                for i in Empleado.objects.all():
+                for i in Empleado.objects.filter(empresa__user=self.request.user):
                     data.append(i.toJSON())
             else:
                 data['error'] = 'Ha ocurrido un error'
         except Exception as e:
             data['error'] = str(e)
         return JsonResponse(data, safe=False)
+
+    def get_queryset(self):
+        return Empleado.objects.filter(empresa__user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -208,6 +214,11 @@ class EmpleadoCreateView(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self):
+        form = super(EmpleadoCreateView, self).get_form()
+        form.fields['empresa'].queryset = Empresa.objects.filter(user=self.request.user)
+        return form
 
     def post(self, request, *args, **kwargs):
         data = {}
@@ -371,14 +382,14 @@ def import_empleados(request):
             data = request.session['all_data']
             bulk_mgr = BulkCreateManager()
             for item in data:
-                empresa = Empresa.objects.get(cuit=item[0])
+                empresa = Empresa.objects.get(cuit=item[0], user=request.user)
                 bulk_mgr.add(Empleado(empresa=empresa, leg=item[1], name=item[2], cuil=item[3], area=item[4]))
             bulk_mgr.done()
 
             return redirect(reverse_lazy('export_lsd:empleado_list'))
         else:
             try:
-                result = get_employees(request.FILES['xlsfile'])
+                result = get_employees(request.FILES['xlsfile'], request.user)
             except ValueError:
                 result['error'] = "Formato de archivo incorrecto"
             except Exception as err:
@@ -615,6 +626,9 @@ class ConfigEBListView(LoginRequiredMixin, ListView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
+    def get_queryset(self):
+        return BasicExportConfig.objects.filter(user=self.request.user)
+
     def post(self, request, *args, **kwargs):
         data = {}
         try:
@@ -622,7 +636,7 @@ class ConfigEBListView(LoginRequiredMixin, ListView):
             if action == 'searchdata':
                 data = []
                 # TODO: Filtrar por usuarios en todos lados
-                for i in BasicExportConfig.objects.all():
+                for i in BasicExportConfig.objects.filter(user=self.request.user):
                     data.append(i.toJSON())
             else:
                 data['error'] = 'Ha ocurrido un error'
